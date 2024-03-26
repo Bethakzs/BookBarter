@@ -1,0 +1,39 @@
+server:
+  port: 8087
+
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: http://localhost:8761/eureka/
+
+management:
+  tracing:
+    sampling:
+      probability: 1.0
+
+jwt:
+  secret: sheeesh
+  accessToken:
+    lifetime: 1h
+  refreshToken:
+    lifetime: 1d
+
+spring:
+  application:
+    name: auth-service
+  main:
+    allow-circular-references: true
+  servlet:
+    multipart:
+      max-file-size: 15MB
+      max-request-size: 15MB
+      enabled: true
+  datasource:
+    url: jdbc:postgresql://localhost:5432/user
+    username: postgres
+    password: 12345
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: true
