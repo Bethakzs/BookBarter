@@ -1,6 +1,8 @@
-package com.example.authservice;
+package com.example.authservice.service;
 
-import com.example.authservice.dto.Role;
+import com.example.authservice.entity.Role;
+import com.example.authservice.entity.User;
+import com.example.authservice.UserRepository;
 import com.example.authservice.dto.UserRegistration;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -79,5 +81,9 @@ public class UserService implements UserDetailsService {
         User user = userRepository.findByEmail(email).get();
         user.setBuck(user.getBuck() + bucks);
         userRepository.save(user);
+    }
+
+    public Optional<User> findByIdForCheck(Long userId) {
+        return userRepository.findById(userId);
     }
 }

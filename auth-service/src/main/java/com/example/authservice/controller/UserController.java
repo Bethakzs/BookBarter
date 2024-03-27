@@ -1,5 +1,7 @@
-package com.example.authservice;
+package com.example.authservice.controller;
 
+import com.example.authservice.entity.User;
+import com.example.authservice.service.UserService;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;

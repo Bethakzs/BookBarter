@@ -1,5 +1,7 @@
-package com.example.authservice;
+package com.example.authservice.controller;
 
+import com.example.authservice.service.AuthService;
+import com.example.authservice.service.JwtTokenService;
 import com.example.authservice.dto.JwtRequest;
 import com.example.authservice.dto.JwtResponse;
 import com.example.authservice.dto.UserRegistration;

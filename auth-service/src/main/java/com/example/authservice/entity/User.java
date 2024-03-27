@@ -1,6 +1,5 @@
-package com.example.authservice;
+package com.example.authservice.entity;
 
-import com.example.authservice.dto.Role;
 import com.fasterxml.jackson.annotation.JsonIdentityInfo;
 import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 import jakarta.persistence.*;

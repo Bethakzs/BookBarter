@@ -1,13 +1,12 @@
-package com.example.authservice.dto;
+package com.example.authservice.error;
 
 import lombok.Data;
-
-import java.security.SecureRandom;
-import java.util.Base64;
+import lombok.EqualsAndHashCode;
 import java.util.Date;
 
+@EqualsAndHashCode(callSuper = true)
 @Data
-public class AppError {
+public class AppError extends RuntimeException {
     private int status;
     private String message;
     private Date timestamp;

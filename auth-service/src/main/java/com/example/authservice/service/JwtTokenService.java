@@ -1,7 +1,7 @@
-package com.example.authservice;
+package com.example.authservice.service;
 
+import com.example.authservice.entity.Role;
 import com.example.authservice.dto.JwtResponse;
-import com.example.authservice.dto.Role;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
