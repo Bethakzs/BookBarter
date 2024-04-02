@@ -1,4 +1,4 @@
-package com.example.authservice.error;
+package com.example.authservice.exception;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;

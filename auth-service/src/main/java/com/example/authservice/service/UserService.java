@@ -2,7 +2,7 @@ package com.example.authservice.service;
 
 import com.example.authservice.entity.Role;
 import com.example.authservice.entity.User;
-import com.example.authservice.UserRepository;
+import com.example.authservice.dao.UserRepository;
 import com.example.authservice.dto.UserRegistration;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;

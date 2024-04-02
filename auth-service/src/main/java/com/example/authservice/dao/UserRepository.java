@@ -1,4 +1,4 @@
-package com.example.authservice;
+package com.example.authservice.dao;
 
 import com.example.authservice.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;

@@ -1,27 +1,45 @@
-package com.example.authservice.controller;
+package com.example.userservice;
 
-import com.example.authservice.entity.User;
-import com.example.authservice.service.UserService;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.transaction.Transactional;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.security.Principal;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/user")
+@RequiredArgsConstructor
 public class UserController {
 
-    @Autowired
-    private UserService userService;
+    private final UserService userService;
 
     @GetMapping("/checkEmail/{email}")
     @Transactional
     public Optional<User> findByEmailForCheck(@PathVariable String email) {
         return userService.findByEmailForCheck(email);
+    }
+
+    @GetMapping("/refreshToken/{refreshToken}")
+    public User findByRefreshToken(@PathVariable String refreshToken) {
+        return userService.findByRefreshToken(refreshToken);
+    }
+
+    @PutMapping("/")
+    public void updateUser(@RequestBody User user) {
+        userService.updateUser(user);
+    }
+
+    @PostMapping("/register")
+    public ResponseEntity<?> register(@RequestBody UserRegistration userRegistration) {
+        return ResponseEntity.ok(userService.createUser(userRegistration));
     }
 
     @PutMapping("/update")
@@ -40,12 +58,12 @@ public class UserController {
     @GetMapping("/get-user/{email}")
     @Transactional
     public ResponseEntity<?> getUser(@PathVariable String email) throws Exception {
-        return ResponseEntity.ok(userService.findByEmailForCheck(email));
+        return ResponseEntity.ok(userService.findByEmail(email));
     }
 
     @DeleteMapping("/delete/{email}")
-    public ResponseEntity<?> deleteUser(@PathVariable String email) {
-        if (userService.findByEmailForCheck(email).isEmpty()) {
+    public ResponseEntity<?> deleteUser(@PathVariable String email) throws Exception {
+        if(userService.findByEmail(email).isEmpty()) {
             return ResponseEntity.badRequest().body("User not found");
         }
         userService.deleteUser(email);
