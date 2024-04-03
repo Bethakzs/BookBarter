@@ -72,7 +72,7 @@ public class AuthController {
             responseBody.put("accessToken", jwtResponse.getJwtAccessToken());
             return ResponseEntity.ok(responseBody);
         } else {
-            return responseEntity;
+            return ResponseEntity.ok(responseEntity.getBody());
         }
     }
 }
