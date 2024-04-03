@@ -36,7 +36,8 @@ public class AuthService {
         String refreshToken = jwtTokenService.generateRefreshToken(userDetails);
         user.setRefreshToken(refreshToken);
         userService.updateUser(user);
-        Set<Role> roles = user.getRoles();
+//        Set<Role> roles = user.getRoles();
+        Role roles = user.getRoles();
         return ResponseEntity.ok(new JwtResponse(accessToken, refreshToken, roles));
     }
 
@@ -57,7 +58,8 @@ public class AuthService {
             user.setRefreshToken(refreshToken);
             userService.updateUser(user);
         }
-        Set<Role> roles = user.getRoles();
+//        Set<Role> roles = user.getRoles();
+        Role roles = user.getRoles();
         return ResponseEntity.ok(new JwtResponse(accessToken, refreshToken, roles));
     }
 
@@ -75,7 +77,8 @@ public class AuthService {
         String newRefreshToken = jwtTokenService.generateRefreshToken(userDetails);
         user.setRefreshToken(newRefreshToken);
         userService.updateUser(user);
-        Set<Role> roles = user.getRoles();
+//        Set<Role> roles = user.getRoles();
+        Role roles = user.getRoles();
         return ResponseEntity.ok(new JwtResponse(newAccessToken, newRefreshToken, roles));
     }
 

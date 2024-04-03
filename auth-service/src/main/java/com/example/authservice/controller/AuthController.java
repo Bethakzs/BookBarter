@@ -56,8 +56,8 @@ public class AuthController {
         if (responseEntity.getBody() instanceof JwtResponse jwtResponse) {
             jwtTokenService.setTokenCookies(response, jwtResponse);
             Map<String, Object> responseBody = new HashMap<>();
-            List<Integer> roleValues = jwtResponse.getRoles().stream().map(Role::getValue).collect(Collectors.toList());
-            responseBody.put("roles", roleValues);
+            Integer roleValue = jwtResponse.getRoles().ordinal();
+            responseBody.put("roles", roleValue);
             responseBody.put("accessToken", jwtResponse.getJwtAccessToken());
             return ResponseEntity.ok(responseBody);
         } else {

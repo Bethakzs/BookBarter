@@ -35,9 +35,10 @@ public class UserService implements UserDetailsService {
         if (user.isEmpty()) {
             throw new UsernameNotFoundException("User not found");
         }
-        List<GrantedAuthority> authorities = user.get().getRoles().stream()
-                .map(role -> new SimpleGrantedAuthority(role.name()))
-                .collect(Collectors.toList());
+        List<GrantedAuthority> authorities = Collections.singletonList(new SimpleGrantedAuthority(user.get().getRoles().name()));
+//        List<GrantedAuthority> authorities = user.get().getRoles().stream()
+//                .map(role -> new SimpleGrantedAuthority(role.name()))
+//                .collect(Collectors.toList());
         return new org.springframework.security.core.userdetails.User(user.get().getEmail(), user.get().getPwd(), authorities);
     }
 
@@ -61,7 +62,8 @@ public class UserService implements UserDetailsService {
                 .pwd(passwordEncoder.encode(userRegistration.getPwd()))
                 .buck(5L)
                 .rating(3.5)
-                .roles(new HashSet<>(Collections.singletonList(Role.ROLE_USER)))
+//                .roles(new HashSet<>(Collections.singletonList(Role.ROLE_USER)))
+                .roles(Role.ROLE_USER)
                 .build();
         return userRepository.save(user);
     }

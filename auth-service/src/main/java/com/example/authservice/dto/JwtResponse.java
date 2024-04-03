@@ -14,5 +14,6 @@ import java.util.Set;
 public class JwtResponse {
     private String jwtAccessToken;
     private String jwtRefreshToken;
-    private Set<Role> roles;
+//    private Set<Role> roles;
+    private Role roles;
 }
