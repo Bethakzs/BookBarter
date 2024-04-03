@@ -16,10 +16,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Optional;
+import java.io.IOException;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -53,18 +51,38 @@ public class UserService implements UserDetailsService {
         userRepository.deleteByEmail(email);
     }
 
-    public User createUser(UserRegistration userRegistration) {
+    public User createUser(UserRegistration userRegistration, MultipartFile image) {
         User user = User.builder()
                 .login(userRegistration.getLogin())
                 .email(userRegistration.getEmail())
                 .phone(passwordEncoder.encode(userRegistration.getPwd()))
                 .pwd(passwordEncoder.encode(userRegistration.getPwd()))
+                .image(image != null ? Objects.requireNonNull(image.getOriginalFilename()).getBytes() : null)
                 .buck(5L)
                 .rating(3.5)
                 .roles(new HashSet<>(Collections.singletonList(Role.ROLE_USER)))
                 .build();
         return userRepository.save(user);
     }
+
+    public User createUser(UserRegistration userRegistration) throws IOException {
+        byte[] imageBytes = null;
+        if (userRegistration.getImage() != null) {
+            imageBytes = userRegistration.getImage().getBytes();
+        }
+        User user = User.builder()
+                .login(userRegistration.getLogin())
+                .email(userRegistration.getEmail())
+                .phone(passwordEncoder.encode(userRegistration.getPwd()))
+                .pwd(passwordEncoder.encode(userRegistration.getPwd()))
+                .image(imageBytes)
+                .buck(5L)
+                .rating(3.5)
+                .roles(new HashSet<>(Collections.singletonList(Role.ROLE_USER)))
+                .build();
+        return userRepository.save(user);
+    }
+
 
     @Transactional
     public Optional<User> findByEmailForCheck(String email) {

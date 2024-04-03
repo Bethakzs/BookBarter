@@ -30,7 +30,7 @@ public class UserController {
         return ResponseEntity.ok("User updated");
     }
 
-    @PostMapping("/add-profile-image")
+    @PostMapping("/update-profile-image")
     @Transactional
     public ResponseEntity<?> addProfileImage(@RequestParam MultipartFile file, Principal principal) {
         userService.addProfileImage(file, principal.getName());
@@ -39,7 +39,7 @@ public class UserController {
 
     @GetMapping("/get-user/{email}")
     @Transactional
-    public ResponseEntity<?> getUser(@PathVariable String email) throws Exception {
+    public ResponseEntity<?> getUser(@PathVariable String email) {
         return ResponseEntity.ok(userService.findByEmailForCheck(email));
     }
 

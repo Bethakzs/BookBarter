@@ -6,12 +6,16 @@ import com.example.authservice.service.AuthService;
 import com.example.authservice.entity.Role;
 import com.example.authservice.dto.UserRegistration;
 import com.example.authservice.service.JwtTokenService;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -32,8 +36,15 @@ public class AuthController {
     }
 
     @PostMapping("/registration")
-    public ResponseEntity<?> createNewUser(@RequestBody UserRegistration regRequest, HttpServletResponse response) {
-        return createResponseEntity(authService.createNewUser(regRequest), response);
+    public ResponseEntity<?> registerUser(
+            @RequestPart("login") String login,
+            @RequestPart("pwd") String pwd,
+            @RequestPart("email") String email,
+            @RequestPart("phone") String phone,
+            @RequestPart(value = "image", required = false) MultipartFile image,
+            HttpServletResponse response) {
+        UserRegistration userRegistration = new UserRegistration(login, email, pwd, phone, image);;
+        return ResponseEntity.ok(createResponseEntity(authService.createNewUser(userRegistration), response));
     }
 
     @PostMapping("/refresh")

@@ -12,7 +12,9 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -44,7 +46,12 @@ public class AuthService {
         if (userService.findByEmailForCheck(regRequest.getEmail()).isPresent()) {
             return new ResponseEntity<>(new AppError(HttpStatus.BAD_REQUEST.value(), "User with the specified email already exists"), HttpStatus.BAD_REQUEST);
         }
-        User user = userService.createUser(regRequest);
+        User user = null;
+        try {
+            user = userService.createUser(regRequest);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
         UserDetails userDetails = userService.loadUserByUsername(user.getEmail());
         String accessToken = jwtTokenService.generateToken(userDetails);
         String refreshToken = jwtTokenService.generateRefreshToken(userDetails);
