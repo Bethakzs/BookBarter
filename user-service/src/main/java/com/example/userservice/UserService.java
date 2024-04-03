@@ -18,6 +18,7 @@ public class UserService {
     private final UserDAO userRepository;
     private final PasswordEncoder passwordEncoder;
 
+    @Transactional
     public Optional<User> findByEmail(String username) throws Exception {
         User user = userRepository.findByEmail(username)
                 .orElseThrow(() -> new Exception("User not found"));
