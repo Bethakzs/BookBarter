@@ -36,15 +36,19 @@ public class AuthController {
     }
 
     @PostMapping("/registration")
-    public ResponseEntity<?> registerUser(
-            @RequestPart("login") String login,
-            @RequestPart("pwd") String pwd,
-            @RequestPart("email") String email,
-            @RequestPart("phone") String phone,
-            @RequestPart(value = "image", required = false) MultipartFile image,
-            HttpServletResponse response) {
-        UserRegistration userRegistration = new UserRegistration(login, email, pwd, phone, image);;
-        return ResponseEntity.ok(createResponseEntity(authService.createNewUser(userRegistration), response));
+    @Transactional
+    public ResponseEntity<?> createNewUser(@RequestParam("login") String login,
+                                @RequestParam("email") String email,
+                                @RequestParam("pwd") String pwd,
+                                @RequestParam("phone") String phone,
+                                @RequestParam("image") MultipartFile image) {
+        UserRegistration regRequest = new UserRegistration(login, email, pwd, phone, image);
+        try {
+            authService.createNewUser(regRequest);
+        } catch (IOException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Internal server error");
+        }
+        return ResponseEntity.ok("User successfully registered");
     }
 
     @PostMapping("/refresh")
@@ -64,15 +68,26 @@ public class AuthController {
     }
 
     private ResponseEntity<?> createResponseEntity(ResponseEntity<?> responseEntity, HttpServletResponse response) {
-        if (responseEntity.getBody() instanceof JwtResponse jwtResponse) {
-            jwtTokenService.setTokenCookies(response, jwtResponse);
-            Map<String, Object> responseBody = new HashMap<>();
-            Integer roleValue = jwtResponse.getRoles().ordinal();
-            responseBody.put("roles", roleValue);
-            responseBody.put("accessToken", jwtResponse.getJwtAccessToken());
-            return ResponseEntity.ok(responseBody);
+        if (responseEntity.getStatusCode() == HttpStatus.OK) {
+            if (responseEntity.getBody() instanceof JwtResponse jwtResponse) {
+                jwtTokenService.setTokenCookies(response, jwtResponse);
+                Map<String, Object> responseBody = new HashMap<>();
+                List<Integer> roleValue = jwtTokenService.getRoles(jwtResponse.getJwtAccessToken()).stream()
+                        .map(Role::getValue)
+                        .collect(Collectors.toList());
+                responseBody.put("roles", roleValue);
+                responseBody.put("accessToken", jwtResponse.getJwtAccessToken());
+                return ResponseEntity.ok().body(responseBody);
+            } else {
+                return ResponseEntity.ok().body(responseEntity.getBody());
+            }
+        } else if (responseEntity.getStatusCode() == HttpStatus.UNAUTHORIZED) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid password or email");
         } else {
-            return ResponseEntity.ok(responseEntity.getBody());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Internal server error");
         }
     }
+
+
+
 }

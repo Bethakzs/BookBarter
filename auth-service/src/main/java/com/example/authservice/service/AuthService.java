@@ -4,6 +4,7 @@ import com.example.authservice.entity.Role;
 import com.example.authservice.entity.User;
 import com.example.authservice.dto.*;
 import com.example.authservice.exception.AppError;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -18,6 +19,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -26,11 +28,12 @@ public class AuthService {
     private final AuthenticationManager authenticationManager;
     private final UserService userService;
 
+    @Transactional
     public ResponseEntity<?> createAuthToken(JwtRequest authRequest) {
         try {
             authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(authRequest.getEmail(), authRequest.getPwd()));
         } catch (BadCredentialsException e) {
-            return new ResponseEntity<>(new AppError(HttpStatus.UNAUTHORIZED.value(), "Invalid email or password"), HttpStatus.UNAUTHORIZED);
+            return new ResponseEntity<>(new AppError(HttpStatus.BAD_REQUEST.value(), "Incorrect email or password"), HttpStatus.BAD_REQUEST);
         }
         User user = userService.findByEmailForCheck(authRequest.getEmail()).get();
         UserDetails userDetails = userService.loadUserByUsername(user.getEmail());
@@ -38,21 +41,17 @@ public class AuthService {
         String refreshToken = jwtTokenService.generateRefreshToken(userDetails);
         user.setRefreshToken(refreshToken);
         userService.updateUser(user);
-//        Set<Role> roles = user.getRoles();
-        Role roles = user.getRoles();
-        return ResponseEntity.ok(new JwtResponse(accessToken, refreshToken, roles));
+        Set<Role> roles = user.getRoles();
+        return ResponseEntity.ok().body(new JwtResponse(accessToken, refreshToken, roles));
     }
 
-    public ResponseEntity<?> createNewUser(UserRegistration regRequest) {
+
+    @Transactional
+    public ResponseEntity<?> createNewUser(UserRegistration regRequest) throws IOException {
         if (userService.findByEmailForCheck(regRequest.getEmail()).isPresent()) {
             return new ResponseEntity<>(new AppError(HttpStatus.BAD_REQUEST.value(), "User with the specified email already exists"), HttpStatus.BAD_REQUEST);
         }
-        User user = null;
-        try {
-            user = userService.createUser(regRequest);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        User user = userService.createUser(regRequest);
         UserDetails userDetails = userService.loadUserByUsername(user.getEmail());
         String accessToken = jwtTokenService.generateToken(userDetails);
         String refreshToken = jwtTokenService.generateRefreshToken(userDetails);
@@ -65,9 +64,8 @@ public class AuthService {
             user.setRefreshToken(refreshToken);
             userService.updateUser(user);
         }
-//        Set<Role> roles = user.getRoles();
-        Role roles = user.getRoles();
-        return ResponseEntity.ok(new JwtResponse(accessToken, refreshToken, roles));
+        Set<Role> roles = user.getRoles();
+        return ResponseEntity.ok().body(new JwtResponse(accessToken, refreshToken, roles));
     }
 
     public ResponseEntity<?> refreshAuthToken(String refreshToken) {
@@ -84,9 +82,8 @@ public class AuthService {
         String newRefreshToken = jwtTokenService.generateRefreshToken(userDetails);
         user.setRefreshToken(newRefreshToken);
         userService.updateUser(user);
-//        Set<Role> roles = user.getRoles();
-        Role roles = user.getRoles();
-        return ResponseEntity.ok(new JwtResponse(newAccessToken, newRefreshToken, roles));
+        Set<Role> roles = user.getRoles();
+        return ResponseEntity.ok().body(new JwtResponse(newAccessToken, newRefreshToken, roles));
     }
 
     public ResponseEntity<?> logoutUser(String refreshToken) {

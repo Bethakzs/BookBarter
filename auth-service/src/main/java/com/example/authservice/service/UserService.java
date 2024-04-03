@@ -33,10 +33,9 @@ public class UserService implements UserDetailsService {
         if (user.isEmpty()) {
             throw new UsernameNotFoundException("User not found");
         }
-        List<GrantedAuthority> authorities = Collections.singletonList(new SimpleGrantedAuthority(user.get().getRoles().name()));
-//        List<GrantedAuthority> authorities = user.get().getRoles().stream()
-//                .map(role -> new SimpleGrantedAuthority(role.name()))
-//                .collect(Collectors.toList());
+        List<GrantedAuthority> authorities = user.get().getRoles().stream()
+                .map(role -> new SimpleGrantedAuthority(role.name()))
+                .collect(Collectors.toList());
         return new org.springframework.security.core.userdetails.User(user.get().getEmail(), user.get().getPwd(), authorities);
     }
 
@@ -44,6 +43,7 @@ public class UserService implements UserDetailsService {
         userRepository.save(user);
     }
 
+    @Transactional
     public User findByRefreshToken(String refreshToken) {
         return userRepository.findByRefreshToken(refreshToken);
     }
@@ -52,32 +52,14 @@ public class UserService implements UserDetailsService {
         userRepository.deleteByEmail(email);
     }
 
-    public User createUser(UserRegistration userRegistration, MultipartFile image) {
-        User user = User.builder()
-                .login(userRegistration.getLogin())
-                .email(userRegistration.getEmail())
-                .phone(passwordEncoder.encode(userRegistration.getPwd()))
-                .pwd(passwordEncoder.encode(userRegistration.getPwd()))
-                .image(image != null ? Objects.requireNonNull(image.getOriginalFilename()).getBytes() : null)
-                .buck(5L)
-                .rating(3.5)
-//                .roles(new HashSet<>(Collections.singletonList(Role.ROLE_USER)))
-                .roles(Role.ROLE_USER)
-                .build();
-        return userRepository.save(user);
-    }
-
+    @Transactional
     public User createUser(UserRegistration userRegistration) throws IOException {
-        byte[] imageBytes = null;
-        if (userRegistration.getImage() != null) {
-            imageBytes = userRegistration.getImage().getBytes();
-        }
         User user = User.builder()
                 .login(userRegistration.getLogin())
                 .email(userRegistration.getEmail())
                 .phone(passwordEncoder.encode(userRegistration.getPwd()))
                 .pwd(passwordEncoder.encode(userRegistration.getPwd()))
-                .image(imageBytes)
+                .image(userRegistration.getImage().getBytes())
                 .buck(5L)
                 .rating(3.5)
                 .roles(new HashSet<>(Collections.singletonList(Role.ROLE_USER)))

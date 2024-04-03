@@ -49,11 +49,11 @@ public class User {
     @Column(name = "buck", nullable = false)
     Long buck;
 
-//    @ElementCollection(targetClass = Role.class)
+    @ElementCollection(targetClass = Role.class)
     @Enumerated(EnumType.STRING)
-//    @CollectionTable(name = "user_roles")
+    @CollectionTable(name = "user_roles")
     @Column(name = "role", nullable = false, length = 20)
-    Role roles;
+    Set<Role> roles;
 
     @Column(name = "refresh_token")
     String refreshToken;
