@@ -5,11 +5,14 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 
+import java.util.List;
+import java.util.Set;
+
 @Data
 @AllArgsConstructor
 @RequiredArgsConstructor
 public class JwtResponse {
     private String jwtAccessToken;
     private String jwtRefreshToken;
-    private Role role;
+    private Set<Role> roles;
 }

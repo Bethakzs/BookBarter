@@ -1,10 +1,11 @@
 package com.example.authservice.controller;
 
-import com.example.authservice.service.AuthService;
-import com.example.authservice.service.JwtTokenService;
 import com.example.authservice.dto.JwtRequest;
 import com.example.authservice.dto.JwtResponse;
+import com.example.authservice.service.AuthService;
+import com.example.authservice.entity.Role;
 import com.example.authservice.dto.UserRegistration;
+import com.example.authservice.service.JwtTokenService;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -12,7 +13,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @CrossOrigin
 @RestController
@@ -23,7 +26,7 @@ public class AuthController {
     private final AuthService authService;
     private final JwtTokenService jwtTokenService;
 
-    @PostMapping("/auth")
+    @PostMapping("/login")
     public ResponseEntity<?> createAuthToken(@RequestBody JwtRequest authRequest, HttpServletResponse response) {
         return createResponseEntity(authService.createAuthToken(authRequest), response);
     }
@@ -53,13 +56,12 @@ public class AuthController {
         if (responseEntity.getBody() instanceof JwtResponse jwtResponse) {
             jwtTokenService.setTokenCookies(response, jwtResponse);
             Map<String, Object> responseBody = new HashMap<>();
-            int roleValue = jwtResponse.getRole().getValue();
-            responseBody.put("role", roleValue);
+            List<Integer> roleValues = jwtResponse.getRoles().stream().map(Role::getValue).collect(Collectors.toList());
+            responseBody.put("roles", roleValues);
             responseBody.put("accessToken", jwtResponse.getJwtAccessToken());
             return ResponseEntity.ok(responseBody);
         } else {
             return responseEntity;
         }
     }
-
 }

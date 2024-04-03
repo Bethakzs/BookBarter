@@ -17,8 +17,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -33,10 +35,11 @@ public class UserService implements UserDetailsService {
         if (user.isEmpty()) {
             throw new UsernameNotFoundException("User not found");
         }
-        List<GrantedAuthority> authorities = Collections.singletonList(new SimpleGrantedAuthority(user.get().getRole().name()));
+        List<GrantedAuthority> authorities = user.get().getRoles().stream()
+                .map(role -> new SimpleGrantedAuthority(role.name()))
+                .collect(Collectors.toList());
         return new org.springframework.security.core.userdetails.User(user.get().getEmail(), user.get().getPwd(), authorities);
     }
-
 
     public void updateUser(User user) {
         userRepository.save(user);
@@ -58,7 +61,7 @@ public class UserService implements UserDetailsService {
                 .pwd(passwordEncoder.encode(userRegistration.getPwd()))
                 .buck(5L)
                 .rating(3.5)
-                .role(Role.ROLE_USER)
+                .roles(new HashSet<>(Collections.singletonList(Role.ROLE_USER)))
                 .build();
         return userRepository.save(user);
     }

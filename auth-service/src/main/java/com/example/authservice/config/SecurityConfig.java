@@ -39,6 +39,7 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(AbstractHttpConfigurer::disable)
+                .cors(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(authorizeRequests ->
                         authorizeRequests
                                 .requestMatchers("**").permitAll()
@@ -52,6 +53,7 @@ public class SecurityConfig {
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowCredentials(true);
         config.addAllowedOrigin("http://localhost:8000");
+        config.addAllowedOrigin("http://localhost:5173");
         config.addAllowedOrigin("**");
         config.addAllowedHeader("Content-Type");
         config.addAllowedHeader("Authorization");

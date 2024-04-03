@@ -13,7 +13,9 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -34,8 +36,8 @@ public class AuthService {
         String refreshToken = jwtTokenService.generateRefreshToken(userDetails);
         user.setRefreshToken(refreshToken);
         userService.updateUser(user);
-        Role role = user.getRole();
-        return ResponseEntity.ok(new JwtResponse(accessToken, refreshToken, role));
+        Set<Role> roles = user.getRoles();
+        return ResponseEntity.ok(new JwtResponse(accessToken, refreshToken, roles));
     }
 
     public ResponseEntity<?> createNewUser(UserRegistration regRequest) {
@@ -55,8 +57,8 @@ public class AuthService {
             user.setRefreshToken(refreshToken);
             userService.updateUser(user);
         }
-        Role role = user.getRole();
-        return ResponseEntity.ok(new JwtResponse(accessToken, refreshToken, role));
+        Set<Role> roles = user.getRoles();
+        return ResponseEntity.ok(new JwtResponse(accessToken, refreshToken, roles));
     }
 
     public ResponseEntity<?> refreshAuthToken(String refreshToken) {
@@ -73,8 +75,8 @@ public class AuthService {
         String newRefreshToken = jwtTokenService.generateRefreshToken(userDetails);
         user.setRefreshToken(newRefreshToken);
         userService.updateUser(user);
-        Role role = user.getRole();
-        return ResponseEntity.ok(new JwtResponse(newAccessToken, newRefreshToken, role));
+        Set<Role> roles = user.getRoles();
+        return ResponseEntity.ok(new JwtResponse(newAccessToken, newRefreshToken, roles));
     }
 
     public ResponseEntity<?> logoutUser(String refreshToken) {

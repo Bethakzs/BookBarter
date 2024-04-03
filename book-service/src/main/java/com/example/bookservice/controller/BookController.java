@@ -22,7 +22,7 @@ public class BookController {
 
     private final BookService bookService;
 
-    @PostMapping("/add/{email}")
+    @PostMapping("/publish/{email}")
     @Transactional
     public Book addBook(@RequestParam("book") String bookStr, @RequestParam("image") MultipartFile image, @PathVariable String email) throws IOException {
         ObjectMapper objectMapper = new ObjectMapper();

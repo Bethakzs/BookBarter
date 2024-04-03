@@ -15,7 +15,9 @@ import org.springframework.stereotype.Service;
 import java.time.Duration;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 public class JwtTokenService {
@@ -46,11 +48,10 @@ public class JwtTokenService {
         return getAllClaimsFromToken(token).getSubject();
     }
 
-    public Role getRole(String token) {
-        String roleString = getAllClaimsFromToken(token).get("role", String.class);
-        return Role.valueOf(roleString);
+    public List<Role> getRoles(String token) {
+        List<String> roleStrings = getAllClaimsFromToken(token).get("roles", List.class);
+        return roleStrings.stream().map(Role::valueOf).collect(Collectors.toList());
     }
-
 
     private Claims getAllClaimsFromToken(String token) {
         return Jwts.parser()
@@ -58,7 +59,6 @@ public class JwtTokenService {
                 .parseClaimsJws(token)
                 .getBody();
     }
-
 
     public boolean validateToken(String token, String email) {
         final String extractedEmail = getEmail(token);
@@ -80,12 +80,11 @@ public class JwtTokenService {
         header.put("typ", "JWT");
 
         Map<String, Object> claims = new HashMap<>();
-        Role role = userDetails.getAuthorities().stream()
+        List<Role> roles = userDetails.getAuthorities().stream()
                 .map(GrantedAuthority::getAuthority)
                 .map(Role::valueOf)
-                .findFirst()
-                .orElse(Role.ROLE_USER);
-        claims.put("role", role);
+                .collect(Collectors.toList());
+        claims.put("roles", roles);
 
         Date issuedDate = new Date();
         Date expiredDate = new Date(issuedDate.getTime() + lifetime.toMillis());

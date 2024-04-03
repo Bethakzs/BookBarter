@@ -6,6 +6,9 @@ import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
+import java.util.List;
+import java.util.Set;
+
 
 @Entity
 @Getter
@@ -45,9 +48,11 @@ public class User {
     @Column(name = "buck", nullable = false)
     Long buck;
 
+    @ElementCollection(targetClass = Role.class)
     @Enumerated(EnumType.STRING)
+    @CollectionTable(name = "user_roles")
     @Column(name = "role", nullable = false, length = 20)
-    Role role;
+    Set<Role> roles;
 
     @Column(name = "refresh_token")
     String refreshToken;
