@@ -1,6 +1,6 @@
 server:
   port: 8087
-#  address: 26.185.15.150
+  address: 26.185.15.150
 
 eureka:
   client:

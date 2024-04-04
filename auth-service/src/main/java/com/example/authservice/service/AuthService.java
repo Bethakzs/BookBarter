@@ -6,12 +6,14 @@ import com.example.authservice.dto.*;
 import com.example.authservice.exception.AppError;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -27,13 +29,14 @@ public class AuthService {
     private final JwtTokenService jwtTokenService;
     private final AuthenticationManager authenticationManager;
     private final UserService userService;
+    private final @Lazy PasswordEncoder passwordEncoder;
 
     @Transactional
     public ResponseEntity<?> createAuthToken(JwtRequest authRequest) {
         try {
             authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(authRequest.getEmail(), authRequest.getPwd()));
         } catch (BadCredentialsException e) {
-            return new ResponseEntity<>(new AppError(HttpStatus.BAD_REQUEST.value(), "Incorrect email or password"), HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>(new AppError(HttpStatus.UNAUTHORIZED.value(), "Incorrect email or password"), HttpStatus.UNAUTHORIZED);
         }
         User user = userService.findByEmailForCheck(authRequest.getEmail()).get();
         UserDetails userDetails = userService.loadUserByUsername(user.getEmail());
@@ -48,25 +51,24 @@ public class AuthService {
 
     @Transactional
     public ResponseEntity<?> createNewUser(UserRegistration regRequest) throws IOException {
-        if (userService.findByEmailForCheck(regRequest.getEmail()).isPresent()) {
-            return new ResponseEntity<>(new AppError(HttpStatus.BAD_REQUEST.value(), "User with the specified email already exists"), HttpStatus.BAD_REQUEST);
+        Optional<User> existingUserEmail = userService.findByEmailForCheck(regRequest.getEmail());
+        Optional<User> existingUserLogin = userService.findByLoginForCheck(regRequest.getLogin());
+        Optional<User> existingUserPhone = userService.findByPhoneForCheck(passwordEncoder.encode(regRequest.getPhone()));
+        if (existingUserEmail.isPresent() || existingUserLogin.isPresent() || existingUserPhone.isPresent()) {
+            return new ResponseEntity<>(new AppError(HttpStatus.UNAUTHORIZED.value(), "User with this credentials already exists"), HttpStatus.UNAUTHORIZED);
         }
         User user = userService.createUser(regRequest);
         UserDetails userDetails = userService.loadUserByUsername(user.getEmail());
         String accessToken = jwtTokenService.generateToken(userDetails);
         String refreshToken = jwtTokenService.generateRefreshToken(userDetails);
-        Optional<User> optionalUser = userService.findByEmailForCheck(user.getEmail());
-        if (optionalUser.isPresent()) {
-            User userWithToken = optionalUser.get();
-            userWithToken.setRefreshToken(refreshToken);
-            userService.updateUser(userWithToken);
-        } else {
-            user.setRefreshToken(refreshToken);
-            userService.updateUser(user);
-        }
+
+        user.setRefreshToken(refreshToken);
+        userService.updateUser(user);
+
         Set<Role> roles = user.getRoles();
         return ResponseEntity.ok().body(new JwtResponse(accessToken, refreshToken, roles));
     }
+
 
     public ResponseEntity<?> refreshAuthToken(String refreshToken) {
         User user = userService.findByRefreshToken(refreshToken);

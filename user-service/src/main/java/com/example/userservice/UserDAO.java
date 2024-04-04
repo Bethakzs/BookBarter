@@ -9,12 +9,13 @@ import java.util.Optional;
 
 @Repository
 public interface UserDAO extends JpaRepository<User, Long> {
-    Optional<User> findByEmail(String email);
 
-    User findByRefreshToken(String refreshToken);
+    @Query("SELECT u FROM User u WHERE u.email = :email")
+    Optional<User> findByEmail(@Param("email") String email);
 
-    void deleteByEmail(String email);
+    @Query("SELECT u FROM User u WHERE u.refreshToken = :refreshToken")
+    User findByRefreshToken(@Param("refreshToken") String refreshToken);
 
-    @Query("SELECT u.id FROM User u WHERE u.email = :email")
-    Long findIdByEmail(@Param("email") String email);
+    @Query("DELETE FROM User u WHERE u.email = :email")
+    void deleteByEmail(@Param("email") String email);
 }

@@ -1,5 +1,6 @@
 server:
   port: 8082
+  address: 26.185.15.150
 
 jwt:
   secret: sheeesh

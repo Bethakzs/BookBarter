@@ -2,6 +2,7 @@ package com.example.authservice.controller;
 
 import com.example.authservice.dto.JwtRequest;
 import com.example.authservice.dto.JwtResponse;
+import com.example.authservice.exception.AppError;
 import com.example.authservice.service.AuthService;
 import com.example.authservice.entity.Role;
 import com.example.authservice.dto.UserRegistration;
@@ -41,19 +42,11 @@ public class AuthController {
                                            @RequestParam("email") String email,
                                            @RequestParam("pwd") String pwd,
                                            @RequestParam("phone") String phone,
-                                           @RequestParam("image") MultipartFile image) {
-        if (image.isEmpty()) {
-            image = null;
-        }
+                                           @RequestParam(value = ("image"), required = false) MultipartFile image,
+                                           HttpServletResponse response) throws IOException {
         UserRegistration regRequest = new UserRegistration(login, email, pwd, phone, image);
-        try {
-            authService.createNewUser(regRequest);
-        } catch (IOException e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Internal server error");
-        }
-        return ResponseEntity.ok("User successfully registered");
+        return createResponseEntity(authService.createNewUser(regRequest), response);
     }
-
 
     @PostMapping("/refresh")
     public ResponseEntity<?> refreshAuthToken(@CookieValue("jwt") String refreshToken, HttpServletResponse response) {
@@ -87,6 +80,12 @@ public class AuthController {
             }
         } else if (responseEntity.getStatusCode() == HttpStatus.UNAUTHORIZED) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid password or email");
+        } else if (responseEntity.getStatusCode() == HttpStatus.CONFLICT) {
+            AppError appError = (AppError) responseEntity.getBody();
+            assert appError != null;
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(appError.getMessage());
+        } else if (responseEntity.getStatusCode() == HttpStatus.BAD_REQUEST) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("User with the credentials already exists");
         } else {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Internal server error");
         }

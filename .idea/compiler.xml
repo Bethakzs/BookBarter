@@ -11,11 +11,13 @@
         <module name="auth-service" />
         <module name="user-service" />
         <module name="book-service" />
+        <module name="api-gateway-service" />
       </profile>
     </annotationProcessing>
   </component>
   <component name="JavacSettings">
     <option name="ADDITIONAL_OPTIONS_OVERRIDE">
+      <module name="api-gateway-service" options="-parameters" />
       <module name="auth-service" options="-parameters" />
       <module name="book-service" options="-parameters" />
       <module name="eureka-service" options="-parameters" />

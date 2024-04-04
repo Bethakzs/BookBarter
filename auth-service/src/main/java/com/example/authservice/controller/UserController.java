@@ -32,8 +32,8 @@ public class UserController {
 
     @PostMapping("/update-profile-image")
     @Transactional
-    public ResponseEntity<?> addProfileImage(@RequestParam MultipartFile file, Principal principal) {
-        userService.addProfileImage(file, principal.getName());
+    public ResponseEntity<?> addProfileImage(@RequestParam("image") MultipartFile image,Principal principal) {
+        userService.addProfileImage(image, principal.getName());
         return ResponseEntity.ok("Image added");
     }
 

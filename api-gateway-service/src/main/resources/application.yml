@@ -1,0 +1,25 @@
+server:
+  port: 8000
+  address: 26.185.15.150
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: http://localhost:8761/eureka/
+
+management:
+  tracing:
+    sampling:
+      probability: 1.0
+
+jwt:
+  secret: sheeesh
+  accessToken:
+    lifetime: 1h
+  refreshToken:
+    lifetime: 1d
+
+spring:
+  application:
+    name: api-gateway
+  main:
+    allow-bean-definition-overriding: true

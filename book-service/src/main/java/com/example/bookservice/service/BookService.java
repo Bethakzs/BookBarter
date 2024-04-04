@@ -6,6 +6,7 @@ import com.example.bookservice.dto.BookUserDTO;
 import com.example.bookservice.dto.UserDTO;
 import com.example.bookservice.entity.Book;
 import com.example.bookservice.entity.BookStatus;
+import com.example.bookservice.entity.Genre;
 import com.example.bookservice.kafka.ReplyProcessor;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -19,6 +20,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -31,24 +33,50 @@ public class BookService {
     private final BookDAO bookRepository;
     private final ReplyProcessor replyProcessor;
     private final KafkaTemplate<String, String> kafkaTemplate;
+    private static long ID = 1;
+
+//    public Book saveBook(BookDTO book, MultipartFile image, String email) throws IOException {
+//        Book newBook = Book.builder()
+//                .id(book.getId())
+//                .title(book.getTitle())
+//                .image(image.getBytes())
+//                .description(book.getDescription())
+//                .author(book.getAuthor())
+//                .year(book.getYear())
+//                .publishedBy(book.getPublishedBy())
+//                .price(book.getPrice())
+//                .genres(book.getGenres())
+//                .userEmail(email)
+//                .status(BookStatus.AVAILABLE)
+//                .build();
+//        return bookRepository.save(newBook);
+//    }
 
     public Book saveBook(BookDTO book, MultipartFile image, String email) throws IOException {
+        List<Genre> genres = book.getGenres().stream()
+                .map(genre -> Genre.valueOf(genre.toUpperCase()))
+                .collect(Collectors.toList());
         Book newBook = Book.builder()
-                .id(book.getId())
+//                .id(Long.valueOf(book.getId()))
+                .id(ID++)
                 .title(book.getTitle())
                 .image(image.getBytes())
                 .description(book.getDescription())
                 .author(book.getAuthor())
-                .year(book.getYear())
+                .year(Integer.parseInt(book.getYear()))
                 .publishedBy(book.getPublishedBy())
-                .price(book.getPrice())
-                .genres(book.getGenres())
+                .price(Integer.parseInt(book.getPrice()))
+                .genres(genres)
                 .userEmail(email)
                 .status(BookStatus.AVAILABLE)
                 .build();
         return bookRepository.save(newBook);
     }
 
+
+    private List<Genre> genres(List<String> genres) {
+        return genres.stream().map(Genre::valueOf).collect(Collectors.toList());
+    }
 
     public Optional<Book> getBook(Long id) {
         return bookRepository.findById(id);

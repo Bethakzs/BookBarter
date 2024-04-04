@@ -1,5 +1,6 @@
 server:
   port: 8083
+  address: 26.185.15.150
 
 eureka:
   client:
@@ -10,6 +11,13 @@ management:
   tracing:
     sampling:
       probability: 1.0
+
+jwt:
+  secret: sheeesh
+  accessToken:
+    lifetime: 1h
+  refreshToken:
+    lifetime: 1d
 
 spring:
   application:

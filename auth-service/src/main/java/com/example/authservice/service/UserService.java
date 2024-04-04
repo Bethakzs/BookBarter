@@ -59,11 +59,14 @@ public class UserService implements UserDetailsService {
                 .email(userRegistration.getEmail())
                 .phone(passwordEncoder.encode(userRegistration.getPwd()))
                 .pwd(passwordEncoder.encode(userRegistration.getPwd()))
-                .image(userRegistration.getImage().getBytes())
+                .image(null)
                 .buck(5L)
                 .rating(3.5)
                 .roles(new HashSet<>(Collections.singletonList(Role.ROLE_USER)))
                 .build();
+        if(userRegistration.getImage() != null) {
+            user.setImage(userRegistration.getImage().getBytes());
+        }
         return userRepository.save(user);
     }
 
@@ -90,5 +93,15 @@ public class UserService implements UserDetailsService {
 
     public Optional<User> findByIdForCheck(Long userId) {
         return userRepository.findById(userId);
+    }
+
+    @Transactional
+    public Optional<User> findByLoginForCheck(String login) {
+        return userRepository.findByLogin(login);
+    }
+
+    @Transactional
+    public Optional<User> findByPhoneForCheck(String phone) {
+        return userRepository.findByPhone(phone);
     }
 }
