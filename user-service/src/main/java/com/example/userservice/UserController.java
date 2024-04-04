@@ -37,11 +37,6 @@ public class UserController {
         userService.updateUser(user);
     }
 
-    @PostMapping("/register")
-    public ResponseEntity<?> register(@RequestBody UserRegistration userRegistration) {
-        return ResponseEntity.ok(userService.createUser(userRegistration));
-    }
-
     @PutMapping("/update")
     public ResponseEntity<?> update(@RequestBody User user) {
         userService.updateUser(user);

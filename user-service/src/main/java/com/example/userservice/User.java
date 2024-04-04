@@ -1,9 +1,13 @@
 package com.example.userservice;
 
-import com.fasterxml.jackson.annotation.*;
+import com.fasterxml.jackson.annotation.JsonIdentityInfo;
+import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
+
+import java.util.Set;
+
 
 @Entity
 @Getter
@@ -21,7 +25,7 @@ public class User {
     @Column(name = "id", nullable = false)
     Long id;
 
-    @Column(name = "username", nullable = false, length = 100)
+    @Column(name = "username", nullable = false, unique = true, length = 100)
     String login;
 
     @Column(name = "email", nullable = false, unique = true, length = 110)
@@ -30,7 +34,7 @@ public class User {
     @Column(name = "password", nullable = false, length = 100)
     String pwd;
 
-    @Column(name = "mobile_phone", nullable = false)
+    @Column(name = "mobile_phone", unique = true, nullable = false)
     String phone;
 
     @Column(name = "rating", nullable = false)
@@ -43,9 +47,11 @@ public class User {
     @Column(name = "buck", nullable = false)
     Long buck;
 
+    @ElementCollection(targetClass = Role.class)
     @Enumerated(EnumType.STRING)
+    @CollectionTable(name = "user_roles")
     @Column(name = "role", nullable = false, length = 20)
-    Role role;
+    Set<Role> roles;
 
     @Column(name = "refresh_token")
     String refreshToken;

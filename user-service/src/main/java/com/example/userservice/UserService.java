@@ -9,6 +9,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.Optional;
 
 @Service
@@ -35,19 +37,6 @@ public class UserService {
 
     public void deleteUser(String email) {
         userRepository.deleteByEmail(email);
-    }
-
-    public User createUser(UserRegistration userRegistration) {
-        User user = User.builder()
-                .login(userRegistration.getLogin())
-                .email(userRegistration.getEmail())
-                .phone(passwordEncoder.encode(userRegistration.getPhone()))
-                .pwd(passwordEncoder.encode(userRegistration.getPwd()))
-                .buck(5L)
-                .rating(3.5)
-                .role(Role.ROLE_USER)
-                .build();
-        return userRepository.save(user);
     }
 
     @Transactional

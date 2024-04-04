@@ -38,10 +38,13 @@ public class AuthController {
     @PostMapping("/registration")
     @Transactional
     public ResponseEntity<?> createNewUser(@RequestParam("login") String login,
-                                @RequestParam("email") String email,
-                                @RequestParam("pwd") String pwd,
-                                @RequestParam("phone") String phone,
-                                @RequestParam("image") MultipartFile image) {
+                                           @RequestParam("email") String email,
+                                           @RequestParam("pwd") String pwd,
+                                           @RequestParam("phone") String phone,
+                                           @RequestParam("image") MultipartFile image) {
+        if (image.isEmpty()) {
+            image = null;
+        }
         UserRegistration regRequest = new UserRegistration(login, email, pwd, phone, image);
         try {
             authService.createNewUser(regRequest);
@@ -50,6 +53,7 @@ public class AuthController {
         }
         return ResponseEntity.ok("User successfully registered");
     }
+
 
     @PostMapping("/refresh")
     public ResponseEntity<?> refreshAuthToken(@CookieValue("jwt") String refreshToken, HttpServletResponse response) {
@@ -87,7 +91,4 @@ public class AuthController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Internal server error");
         }
     }
-
-
-
 }
