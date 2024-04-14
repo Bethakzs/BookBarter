@@ -20,6 +20,7 @@ import java.util.Optional;
 public class UserController {
 
     private final UserService userService;
+    private final JwtTokenProvider jwtTokenProvider;
 
     @GetMapping("/checkEmail/{email}")
     @Transactional
@@ -50,11 +51,27 @@ public class UserController {
         return ResponseEntity.ok("Image added");
     }
 
-    @GetMapping("/get-user/{email}")
+//    @GetMapping("/get-user/{email}")
+//    @Transactional
+//    public ResponseEntity<?> getUser(@PathVariable String email) throws Exception {
+//        return ResponseEntity.ok(userService.findByEmail(email));
+//    }
+
+    @GetMapping("/get")
     @Transactional
-    public ResponseEntity<?> getUser(@PathVariable String email) throws Exception {
-        return ResponseEntity.ok(userService.findByEmail(email));
+    public ResponseEntity<?> getUser(@RequestHeader("Authorization") String authHeader) throws Exception {
+        String token = authHeader.substring(7);
+        String email = jwtTokenProvider.getEmailFromToken(token);
+        return ResponseEntity.ok(userService.findByEmailUserDTO(email));
     }
+
+//    @GetMapping("/get-user/{email}")
+//    @Transactional
+//    public ResponseEntity<?> getUser(@RequestHeader("Authorization") String authHeader) throws Exception {
+//        String token = authHeader.substring(7);
+//        String email = jwtTokenProvider.getEmailFromToken(token);
+//        return ResponseEntity.ok(userService.findByEmail(email));
+//    }
 
     @DeleteMapping("/delete/{email}")
     public ResponseEntity<?> deleteUser(@PathVariable String email) throws Exception {

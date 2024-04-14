@@ -9,10 +9,11 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class UserReviewDTO {
+public class UserDTO {
+    private Long id;
     private String login;
     private String email;
-    private String pwd;
+    private String phone;
     private Double rating;
     private byte[] image;
     private Long bucks;

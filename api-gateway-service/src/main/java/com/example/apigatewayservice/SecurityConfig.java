@@ -3,7 +3,11 @@ package com.example.apigatewayservice;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.server.reactive.ServerHttpResponse;
+import org.springframework.http.server.reactive.ServerHttpResponseDecorator;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity;
 import org.springframework.security.config.web.server.SecurityWebFiltersOrder;
 import org.springframework.security.config.web.server.ServerHttpSecurity;
@@ -12,10 +16,11 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.server.SecurityWebFilterChain;
 import org.springframework.security.web.server.context.NoOpServerSecurityContextRepository;
 import org.springframework.web.cors.CorsConfiguration;
-import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-import org.springframework.web.filter.CorsFilter;
-import org.springframework.web.server.WebFilter;
+import org.springframework.web.cors.reactive.CorsWebFilter;
+import org.springframework.web.cors.reactive.UrlBasedCorsConfigurationSource;
 import reactor.core.publisher.Mono;
+
+import java.util.List;
 
 @Configuration
 @EnableWebFluxSecurity
@@ -28,35 +33,51 @@ public class SecurityConfig {
     public SecurityWebFilterChain filterChain(ServerHttpSecurity http) {
         http
                 .csrf(ServerHttpSecurity.CsrfSpec::disable)
+                .cors(Customizer.withDefaults())
                 .authorizeExchange(exchanges ->
                         exchanges
-                                .pathMatchers("/tt").permitAll()
-                                .pathMatchers("/auth/**", "/v3/api-docs/**", "/swagger-resources/**", "/swagger-ui.html", "/webjars/**", "/swagger-ui/**", "/swagger-ui.html**", "/swagger-ui/**", "/v3/api-docs", "/v3/api-docs/**", "/swagger-ui.html**", "/swagger-ui/**").permitAll()
+                                .pathMatchers("/auth/**", "/v3/api-docs/**", "/swagger-resources/**", "/swagger-ui.html",
+                                        "/webjars/**", "/swagger-ui/**", "/swagger-ui.html**", "/swagger-ui/**", "/v3/api-docs",
+                                        "/v3/api-docs/**", "/swagger-ui.html**", "/swagger-ui/**").permitAll()
                                 .pathMatchers("/api/**").hasAnyRole("USER", "ADMIN")
                 )
                 .securityContextRepository(NoOpServerSecurityContextRepository.getInstance())
-                .exceptionHandling(c -> c.authenticationEntryPoint((swe, e) -> Mono.fromRunnable(() -> swe.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED))))
+                .exceptionHandling(e -> e
+                        .authenticationEntryPoint((swe, ex) -> Mono.fromRunnable(() -> {
+                            ServerHttpResponse response = swe.getResponse();
+                            HttpHeaders headers = response.getHeaders();
+                            if (!headers.containsKey("WWW-Authenticate")) {
+                                response = new ServerHttpResponseDecorator(response) {
+                                    @Override
+                                    public HttpHeaders getHeaders() {
+                                        HttpHeaders httpHeaders = new HttpHeaders();
+                                        httpHeaders.putAll(super.getHeaders());
+                                        httpHeaders.add("WWW-Authenticate", "Bearer");
+                                        return httpHeaders;
+                                    }
+                                };
+                            }
+                            response.setStatusCode(HttpStatus.UNAUTHORIZED);
+                        }))
+                )
+                .addFilterAt(corsWebFilter(), SecurityWebFiltersOrder.CORS)
                 .addFilterAt(jwtTokenFilter, SecurityWebFiltersOrder.AUTHENTICATION);
         return http.build();
     }
 
-
     @Bean
-    public CorsFilter corsFilter() {
+    public CorsWebFilter corsWebFilter() {
+        CorsConfiguration corsConfig = new CorsConfiguration();
+        corsConfig.setAllowedOrigins(List.of("http://localhost:4173"));
+//        corsConfig.setAllowedOrigins(List.of("http://localhost:4173", "http://localhost:5173"));
+//        corsConfig.setAllowedOrigins(List.of("http://localhost:5173"));
+        corsConfig.setAllowedMethods(List.of("*"));
+        corsConfig.setAllowedHeaders(List.of("*"));
+        corsConfig.setAllowCredentials(true);
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        CorsConfiguration config = new CorsConfiguration();
-        config.setAllowCredentials(true);
-        config.addAllowedOrigin("http://localhost:5173");
-        config.addAllowedOrigin("http://localhost:8000");
-        config.addAllowedOrigin("*");
-        config.addAllowedHeader("Content-Type");
-        config.addAllowedHeader("Authorization");
-        config.addAllowedMethod("GET");
-        config.addAllowedMethod("POST");
-        config.addAllowedMethod("PUT");
-        config.addAllowedMethod("DELETE");
-        source.registerCorsConfiguration("/**", config);
-        return new CorsFilter(source);
+        source.registerCorsConfiguration("/**", corsConfig);
+
+        return new CorsWebFilter(source);
     }
 
     @Bean

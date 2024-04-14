@@ -11,9 +11,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.userdetails.User;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.web.bind.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -21,7 +18,6 @@ import java.io.IOException;
 import java.security.Principal;
 import java.util.List;
 
-@CrossOrigin
 @RestController
 @RequestMapping("/api/book")
 @RequiredArgsConstructor

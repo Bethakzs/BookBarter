@@ -22,8 +22,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-@CrossOrigin
 @RestController
+//@CrossOrigin(origins = "http://localhost:4173", allowCredentials = "true")
 @RequiredArgsConstructor
 @RequestMapping("/auth")
 public class AuthController {
@@ -43,12 +43,12 @@ public class AuthController {
                                            @RequestParam("pwd") String pwd,
                                            @RequestParam("phone") String phone,
                                            @RequestParam(value = ("image"), required = false) MultipartFile image,
-                                           HttpServletResponse response) throws IOException {
+                                           HttpServletResponse response) {
         UserRegistration regRequest = new UserRegistration(login, email, pwd, phone, image);
         return createResponseEntity(authService.createNewUser(regRequest), response);
     }
 
-    @PostMapping("/refresh")
+    @GetMapping("/refresh")
     public ResponseEntity<?> refreshAuthToken(@CookieValue("jwt") String refreshToken, HttpServletResponse response) {
         return createResponseEntity(authService.refreshAuthToken(refreshToken), response);
     }
@@ -65,29 +65,31 @@ public class AuthController {
     }
 
     private ResponseEntity<?> createResponseEntity(ResponseEntity<?> responseEntity, HttpServletResponse response) {
-        if (responseEntity.getStatusCode() == HttpStatus.OK) {
-            if (responseEntity.getBody() instanceof JwtResponse jwtResponse) {
-                jwtTokenService.setTokenCookies(response, jwtResponse);
-                Map<String, Object> responseBody = new HashMap<>();
-                List<Integer> roleValue = jwtTokenService.getRoles(jwtResponse.getJwtAccessToken()).stream()
+        if (responseEntity.getBody() instanceof JwtResponse jwtResponse) {
+            jwtTokenService.setTokenCookies(response, jwtResponse);
+            Map<String, Object> responseBody = new HashMap<>();
+            List<Integer> roleValue = jwtTokenService.getRoles(jwtResponse.getJwtAccessToken()).stream()
                         .map(Role::getValue)
                         .collect(Collectors.toList());
-                responseBody.put("roles", roleValue);
-                responseBody.put("accessToken", jwtResponse.getJwtAccessToken());
-                return ResponseEntity.ok().body(responseBody);
-            } else {
-                return ResponseEntity.ok().body(responseEntity.getBody());
-            }
-        } else if (responseEntity.getStatusCode() == HttpStatus.UNAUTHORIZED) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid password or email");
-        } else if (responseEntity.getStatusCode() == HttpStatus.CONFLICT) {
-            AppError appError = (AppError) responseEntity.getBody();
-            assert appError != null;
-            return ResponseEntity.status(HttpStatus.CONFLICT).body(appError.getMessage());
-        } else if (responseEntity.getStatusCode() == HttpStatus.BAD_REQUEST) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("User with the credentials already exists");
+            responseBody.put("roles", roleValue);
+            responseBody.put("accessToken", jwtResponse.getJwtAccessToken());
+            return ResponseEntity.ok(responseBody);
         } else {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Internal server error");
+            if (responseEntity.getStatusCode() == HttpStatus.NO_CONTENT) {
+                return ResponseEntity.noContent().build();
+            } else if (responseEntity.getStatusCode() == HttpStatus.UNAUTHORIZED) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid password or email");
+            } else if (responseEntity.getStatusCode() == HttpStatus.CONFLICT) {
+                AppError appError = (AppError) responseEntity.getBody();
+                assert appError != null;
+                return ResponseEntity.status(HttpStatus.CONFLICT).body(appError.getMessage());
+            } else if (responseEntity.getStatusCode() == HttpStatus.BAD_REQUEST) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("User with the credentials already exists");
+            } else if (responseEntity.getStatusCode() == HttpStatus.INTERNAL_SERVER_ERROR) {
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Internal server error");
+            } else {
+                return ResponseEntity.ok(responseEntity.getBody());
+            }
         }
     }
 }

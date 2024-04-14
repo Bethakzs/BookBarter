@@ -9,11 +9,12 @@ import org.springframework.cloud.gateway.route.builder.GatewayFilterSpec;
 import org.springframework.cloud.gateway.route.builder.RouteLocatorBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.http.server.reactive.ServerHttpRequest;
+import org.springframework.web.bind.annotation.CrossOrigin;
 
 @SpringBootApplication
 @EnableDiscoveryClient
 public class ApiGatewayServiceApplication {
-//  For local
+	//  For local
 	@Bean
 	public RouteLocator customRouteLocator(RouteLocatorBuilder builder) {
 		return builder.routes()
@@ -32,7 +33,7 @@ public class ApiGatewayServiceApplication {
 				.build();
 	}
 
-//  For docker-compose
+	//  For docker-compose
 //	@Bean
 //	public RouteLocator customRouteLocator(RouteLocatorBuilder builder) {
 //		return builder.routes()

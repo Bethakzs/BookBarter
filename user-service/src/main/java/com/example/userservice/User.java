@@ -45,7 +45,7 @@ public class User {
     private byte[] image;
 
     @Column(name = "buck", nullable = false)
-    Long buck;
+    Long bucks;
 
     @ElementCollection(targetClass = Role.class)
     @Enumerated(EnumType.STRING)

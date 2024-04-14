@@ -16,5 +16,5 @@ public class UserDTO {
     private Double rating;
     private String phone;
     private byte[] image;
-    private Long buck;
+    private Long bucks;
 }

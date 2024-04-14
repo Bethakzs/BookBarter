@@ -1,16 +1,14 @@
 package com.example.userservice;
 
 
+import com.example.userservice.dto.UserDTO;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.util.Collections;
-import java.util.HashSet;
 import java.util.Optional;
 
 @Service
@@ -21,10 +19,30 @@ public class UserService {
     private final PasswordEncoder passwordEncoder;
 
     @Transactional
-    public Optional<User> findByEmail(String username) throws Exception {
-        User user = userRepository.findByEmail(username)
+    public Optional<User> findByEmail(String email) throws Exception {
+        User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new Exception("User not found"));
         return Optional.of(user);
+    }
+
+    @Transactional
+    public UserDTO findByEmailUserDTO(String email) throws Exception {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new Exception("User not found"));
+        return UserDTO.builder()
+                .id(user.getId())
+                .login(user.getLogin())
+                .email(user.getEmail())
+                .phone(passwordEncoder.encode(user.getPhone()))
+                .rating(user.getRating())
+                .image(user.getImage())
+                .bucks(user.getBucks())
+                .build();
+    }
+
+    public User findByEmailWithOutCheck(String email) {
+        Optional<User> user = userRepository.findByEmail(email);
+        return user.orElse(null);
     }
 
     public void updateUser(User user) {
@@ -56,7 +74,7 @@ public class UserService {
 
     public void addBucksToUser(String name, Long bucks) {
         User user = userRepository.findByEmail(name).get();
-        user.setBuck(user.getBuck() + bucks);
+        user.setBucks(user.getBucks() + bucks);
         userRepository.save(user);
     }
 }

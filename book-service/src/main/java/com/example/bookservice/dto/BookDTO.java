@@ -20,13 +20,3 @@ public class BookDTO {
     private String publishedBy;
     private String price;
 }
-//public class BookDTO {
-//    private Long id;
-//    private String title;
-//    private List<Genre> genres;
-//    private String description;
-//    private String author;
-//    private int year;
-//    private String publishedBy;
-//    private int price;
-//}

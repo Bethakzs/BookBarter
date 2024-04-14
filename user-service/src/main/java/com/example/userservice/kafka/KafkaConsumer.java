@@ -7,7 +7,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.support.KafkaHeaders;
@@ -34,12 +33,26 @@ public class KafkaConsumer {
                 .pwd(user.getPwd())
                 .rating(user.getRating())
                 .image(user.getImage())
-                .buck(user.getBuck())
+                .bucks(user.getBucks())
                 .build();
         ObjectMapper mapper = new ObjectMapper();
         System.out.println("Sending user: " + replyTopic);
         try {
             String userJson = mapper.writeValueAsString(userReviewDTO);
+            kafkaTemplate.send(replyTopic, userJson);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException("Error serializing user", e);
+        }
+    }
+
+    @KafkaListener(topics = "user-service-request-get-user-by-email-without-exist-topic", groupId = "auth-service")
+    @Transactional
+    public void handleGetUserFromAuthService(@Payload String email, @Header(KafkaHeaders.REPLY_TOPIC) String replyTopic) {
+        User user = userService.findByEmailWithOutCheck(email);
+        ObjectMapper mapper = new ObjectMapper();
+        System.out.println("Sending user: " + replyTopic);
+        try {
+            String userJson = mapper.writeValueAsString(user);
             kafkaTemplate.send(replyTopic, userJson);
         } catch (JsonProcessingException e) {
             throw new RuntimeException("Error serializing user", e);
@@ -73,7 +86,7 @@ public class KafkaConsumer {
         long bucks = Long.parseLong(parts[1]);
         User user = userService.findByEmailForCheck(email)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
-        user.setBuck(bucks);
+        user.setBucks(bucks);
         userService.updateUser(user);
     }
 }

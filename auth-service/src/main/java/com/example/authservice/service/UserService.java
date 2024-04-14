@@ -4,9 +4,15 @@ import com.example.authservice.entity.Role;
 import com.example.authservice.entity.User;
 import com.example.authservice.dao.UserRepository;
 import com.example.authservice.dto.UserRegistration;
+import com.example.authservice.kafka.ReplyProcessor;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Lazy;
+import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.kafka.support.KafkaHeaders;
+import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -18,6 +24,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 @Service
@@ -26,17 +33,32 @@ public class UserService implements UserDetailsService {
 
     private final UserRepository userRepository;
     private final @Lazy PasswordEncoder passwordEncoder;
+    private final ReplyProcessor replyProcessor;
+    private final KafkaTemplate<String, String> kafkaTemplate;
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        Optional<User> user = userRepository.findByEmail(username);
-        if (user.isEmpty()) {
+        CompletableFuture<String> userFuture = replyProcessor.waitForReply();
+        kafkaTemplate.send(MessageBuilder.withPayload(username)
+                .setHeader(KafkaHeaders.TOPIC, "user-service-request-get-user-by-email-without-exist-topic")
+                .setHeader(KafkaHeaders.REPLY_TOPIC, "auth-service-response-get-user-by-email-topic")
+                .setHeader("serviceName", "auth-service")
+                .build());
+        String userJson = userFuture.join();
+        ObjectMapper mapper = new ObjectMapper();
+        User user;
+        try {
+            user = mapper.readValue(userJson, User.class);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException("Error deserializing user", e);
+        }
+        if(user == null) {
             throw new UsernameNotFoundException("User not found");
         }
-        List<GrantedAuthority> authorities = user.get().getRoles().stream()
+        List<GrantedAuthority> authorities = user.getRoles().stream()
                 .map(role -> new SimpleGrantedAuthority(role.name()))
                 .collect(Collectors.toList());
-        return new org.springframework.security.core.userdetails.User(user.get().getEmail(), user.get().getPwd(), authorities);
+        return new org.springframework.security.core.userdetails.User(user.getEmail(), user.getPwd(), authorities);
     }
 
     public void updateUser(User user) {
@@ -53,19 +75,23 @@ public class UserService implements UserDetailsService {
     }
 
     @Transactional
-    public User createUser(UserRegistration userRegistration) throws IOException {
+    public User createUser(UserRegistration userRegistration) {
         User user = User.builder()
                 .login(userRegistration.getLogin())
                 .email(userRegistration.getEmail())
                 .phone(passwordEncoder.encode(userRegistration.getPwd()))
                 .pwd(passwordEncoder.encode(userRegistration.getPwd()))
                 .image(null)
-                .buck(5L)
+                .bucks(5L)
                 .rating(3.5)
                 .roles(new HashSet<>(Collections.singletonList(Role.ROLE_USER)))
                 .build();
         if(userRegistration.getImage() != null) {
-            user.setImage(userRegistration.getImage().getBytes());
+            try {
+                user.setImage(userRegistration.getImage().getBytes());
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
         }
         return userRepository.save(user);
     }
@@ -87,7 +113,7 @@ public class UserService implements UserDetailsService {
 
     public void addBucksToUser(String email, Long bucks) {
         User user = userRepository.findByEmail(email).get();
-        user.setBuck(user.getBuck() + bucks);
+        user.setBucks(user.getBucks() + bucks);
         userRepository.save(user);
     }
 

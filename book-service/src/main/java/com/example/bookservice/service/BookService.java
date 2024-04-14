@@ -57,7 +57,6 @@ public class BookService {
                 .map(genre -> Genre.valueOf(genre.toUpperCase()))
                 .collect(Collectors.toList());
         Book newBook = Book.builder()
-//                .id(Long.valueOf(book.getId()))
                 .id(ID++)
                 .title(book.getTitle())
                 .image(image.getBytes())

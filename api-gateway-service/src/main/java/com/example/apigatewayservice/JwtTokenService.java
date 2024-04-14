@@ -25,7 +25,7 @@ public class JwtTokenService {
         return getAllClaimsFromToken(token).getSubject();
     }
 
-    public List<Role> getRoles(String token) { // змінено на список ролей
+    public List<Role> getRoles(String token) {
         List<String> roleStrings = getAllClaimsFromToken(token).get("roles", List.class);
         return roleStrings.stream().map(Role::valueOf).collect(Collectors.toList());
     }

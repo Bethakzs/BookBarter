@@ -50,7 +50,7 @@ public class AuthService {
 
 
     @Transactional
-    public ResponseEntity<?> createNewUser(UserRegistration regRequest) throws IOException {
+    public ResponseEntity<?> createNewUser(UserRegistration regRequest) {
         Optional<User> existingUserEmail = userService.findByEmailForCheck(regRequest.getEmail());
         Optional<User> existingUserLogin = userService.findByLoginForCheck(regRequest.getLogin());
         Optional<User> existingUserPhone = userService.findByPhoneForCheck(passwordEncoder.encode(regRequest.getPhone()));
@@ -58,15 +58,8 @@ public class AuthService {
             return new ResponseEntity<>(new AppError(HttpStatus.UNAUTHORIZED.value(), "User with this credentials already exists"), HttpStatus.UNAUTHORIZED);
         }
         User user = userService.createUser(regRequest);
-        UserDetails userDetails = userService.loadUserByUsername(user.getEmail());
-        String accessToken = jwtTokenService.generateToken(userDetails);
-        String refreshToken = jwtTokenService.generateRefreshToken(userDetails);
-
-        user.setRefreshToken(refreshToken);
-        userService.updateUser(user);
-
         Set<Role> roles = user.getRoles();
-        return ResponseEntity.ok().body(new JwtResponse(accessToken, refreshToken, roles));
+        return ResponseEntity.ok().body(roles);
     }
 
 
