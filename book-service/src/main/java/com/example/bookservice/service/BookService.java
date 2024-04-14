@@ -35,23 +35,6 @@ public class BookService {
     private final KafkaTemplate<String, String> kafkaTemplate;
     private static long ID = 1;
 
-//    public Book saveBook(BookDTO book, MultipartFile image, String email) throws IOException {
-//        Book newBook = Book.builder()
-//                .id(book.getId())
-//                .title(book.getTitle())
-//                .image(image.getBytes())
-//                .description(book.getDescription())
-//                .author(book.getAuthor())
-//                .year(book.getYear())
-//                .publishedBy(book.getPublishedBy())
-//                .price(book.getPrice())
-//                .genres(book.getGenres())
-//                .userEmail(email)
-//                .status(BookStatus.AVAILABLE)
-//                .build();
-//        return bookRepository.save(newBook);
-//    }
-
     public Book saveBook(BookDTO book, MultipartFile image, String email) throws IOException {
         List<Genre> genres = book.getGenres().stream()
                 .map(genre -> Genre.valueOf(genre.toUpperCase()))
@@ -70,11 +53,6 @@ public class BookService {
                 .status(BookStatus.AVAILABLE)
                 .build();
         return bookRepository.save(newBook);
-    }
-
-
-    private List<Genre> genres(List<String> genres) {
-        return genres.stream().map(Genre::valueOf).collect(Collectors.toList());
     }
 
     public Optional<Book> getBook(Long id) {
@@ -114,7 +92,7 @@ public class BookService {
                 .id(book.getId())
                 .title(book.getTitle())
                 .image(book.getImage())
-                .genres(book.getGenres())
+                .genres(remakeGenres(book.getGenres()))
                 .description(book.getDescription())
                 .author(book.getAuthor())
                 .year(book.getYear())
@@ -122,6 +100,10 @@ public class BookService {
                 .price(book.getPrice())
                 .user(userDTO)
                 .build()).collect(Collectors.toList());
+    }
+
+    private List<Genre> remakeGenres(List<Genre> genres) {
+        return null;
     }
 
     public List<BookUserDTO> getAllAvailable() {
