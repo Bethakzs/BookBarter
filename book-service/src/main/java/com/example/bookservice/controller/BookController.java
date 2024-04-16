@@ -28,7 +28,7 @@ public class BookController {
 
     @PostMapping("/publish")
     @Transactional
-    public Book addBook(
+    public ResponseEntity<?> addBook(
             @RequestParam("title") String title,
             @RequestParam("genres") List<String> genres,
             @RequestParam("description") String description,
@@ -51,7 +51,7 @@ public class BookController {
                 .publishedBy(publishedBy)
                 .price(price)
                 .build();
-        return bookService.saveBook(bookDTO, image, email);
+        return ResponseEntity.ok(bookService.saveBook(bookDTO, image, email));
     }
 
     @PutMapping("/edit/{id}")

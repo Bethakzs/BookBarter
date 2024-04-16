@@ -102,9 +102,42 @@ public class BookService {
                 .build()).collect(Collectors.toList());
     }
 
-    private List<Genre> remakeGenres(List<Genre> genres) {
+    private List<String> remakeGenres(List<Genre> genres) {
+        if (genres != null) {
+            return genres.stream()
+                    .map(this::translateGenre)
+                    .collect(Collectors.toList());
+        }
         return null;
     }
+
+    private String translateGenre(Genre genre) {
+        switch (genre) {
+            case NOVEL:
+                return "Роман";
+            case POETRY:
+                return "Поезія";
+            case FANTASY:
+                return "Фантастика";
+            case FICTION:
+                return "Художня література";
+            case DETECTIVE:
+                return "Детектив";
+            case BIOGRAPHY:
+                return "Біографія";
+            case HISTORICAL:
+                return "Історичний";
+            case SCIENTIFIC:
+                return "Науковий";
+            case SCI_FI:
+                return "Наукова фантастика";
+            case CHILDREN:
+                return "Дитячий";
+            default:
+                return "Невідомий жанр";
+        }
+    }
+
 
     public List<BookUserDTO> getAllAvailable() {
         List<Book> books = bookRepository.findAll();
@@ -138,7 +171,8 @@ public class BookService {
                     .id(book.getId())
                     .title(book.getTitle())
                     .image(book.getImage())
-                    .genres(book.getGenres())
+//                    .genres(book.getGenres())
+                    .genres(remakeGenres(book.getGenres()))
                     .description(book.getDescription())
                     .author(book.getAuthor())
                     .year(book.getYear())
