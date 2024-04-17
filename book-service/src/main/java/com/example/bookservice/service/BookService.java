@@ -236,21 +236,4 @@ public class BookService {
                 .user(userDTO)
                 .build();
     }
-
-//    public BookDTO getBookById(Long id) {
-//        Book book = bookRepository.findById(id).orElse(null);
-//        if (book == null) {
-//            throw new RuntimeException("Book not found");
-//        }
-//        return BookDTO.builder()
-//                .id(String.valueOf(book.getId()))
-//                .title(book.getTitle())
-//                .description(book.getDescription())
-//                .author(book.getAuthor())
-//                .genres(remakeGenres(book.getGenres()))
-//                .year(String.valueOf(book.getYear()))
-//                .publishedBy(book.getPublishedBy())
-//                .price(String.valueOf(book.getPrice()))
-//                .build();
-//    }
 }

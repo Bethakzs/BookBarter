@@ -2,6 +2,7 @@ package com.example.authservice.controller;
 
 import com.example.authservice.dto.JwtRequest;
 import com.example.authservice.dto.JwtResponse;
+import com.example.authservice.entity.User;
 import com.example.authservice.exception.AppError;
 import com.example.authservice.service.AuthService;
 import com.example.authservice.entity.Role;
@@ -20,6 +21,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @RestController
@@ -47,6 +49,18 @@ public class AuthController {
         UserRegistration regRequest = new UserRegistration(login, email, pwd, phone, image);
         return createResponseEntity(authService.createNewUser(regRequest), response);
     }
+
+    @PostMapping("/get/{number}")
+    @Transactional
+    public ResponseEntity<?> findByNumber(@PathVariable String number) {
+        Optional<User> user = authService.findByNumber(number);
+        if (user.isPresent()) {
+            return ResponseEntity.ok(user.get());
+        } else {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
+        }
+    }
+
 
     @GetMapping("/refresh")
     public ResponseEntity<?> refreshAuthToken(@CookieValue("jwt") String refreshToken, HttpServletResponse response) {

@@ -52,9 +52,7 @@ public class AuthService {
     public ResponseEntity<?> createNewUser(UserRegistration regRequest) {
         Optional<User> existingUserEmail = userService.findByEmailForCheck(regRequest.getEmail());
         Optional<User> existingUserLogin = userService.findByLoginForCheck(regRequest.getLogin());
-        Optional<User> existingUserPhone = userService.findByPhoneForCheck(passwordEncoder.encode(regRequest.getPhone()));
-        System.out.println(passwordEncoder.encode(regRequest.getPhone()));
-        System.out.println(regRequest.getPhone());
+        Optional<User> existingUserPhone = userService.findByPhoneForCheck(regRequest.getPhone());
         if (existingUserEmail.isPresent() || existingUserLogin.isPresent() || existingUserPhone.isPresent()) {
             return new ResponseEntity<>(new AppError(HttpStatus.UNAUTHORIZED.value(), "User with this credentials already exists"), HttpStatus.UNAUTHORIZED);
         }
@@ -62,7 +60,6 @@ public class AuthService {
         Set<Role> roles = user.getRoles();
         return ResponseEntity.ok().body(roles);
     }
-
 
     public ResponseEntity<?> refreshAuthToken(String refreshToken) {
         User user = userService.findByRefreshToken(refreshToken);
@@ -90,6 +87,10 @@ public class AuthService {
         user.setRefreshToken("");
         userService.updateUser(user);
         return ResponseEntity.noContent().build();
+    }
+
+    public Optional<User> findByNumber(String number) {
+        return userService.findByPhoneForCheck(number);
     }
 }
 

@@ -70,16 +70,12 @@ public class UserService implements UserDetailsService {
         return userRepository.findByRefreshToken(refreshToken);
     }
 
-    public void deleteUser(String email) {
-        userRepository.deleteByEmail(email);
-    }
-
     @Transactional
     public User createUser(UserRegistration userRegistration) {
         User user = User.builder()
                 .login(userRegistration.getLogin())
                 .email(userRegistration.getEmail())
-                .phone(passwordEncoder.encode(userRegistration.getPwd()))
+                .phone(userRegistration.getPhone())
                 .pwd(passwordEncoder.encode(userRegistration.getPwd()))
                 .image(null)
                 .bucks(5L)
@@ -96,14 +92,13 @@ public class UserService implements UserDetailsService {
         return userRepository.save(user);
     }
 
+    public Optional<User> findByIdForCheck(Long userId) {
+        return userRepository.findById(userId);
+    }
 
     @Transactional
     public Optional<User> findByEmailForCheck(String email) {
         return userRepository.findByEmail(email);
-    }
-
-    public Optional<User> findByIdForCheck(Long userId) {
-        return userRepository.findById(userId);
     }
 
     @Transactional

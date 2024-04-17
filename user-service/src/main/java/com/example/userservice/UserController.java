@@ -22,40 +22,12 @@ public class UserController {
     private final UserService userService;
     private final JwtTokenProvider jwtTokenProvider;
 
-    @GetMapping("/checkEmail/{email}")
-    @Transactional
-    public Optional<User> findByEmailForCheck(@PathVariable String email) {
-        return userService.findByEmailForCheck(email);
-    }
-
-    @GetMapping("/refreshToken/{refreshToken}")
-    public User findByRefreshToken(@PathVariable String refreshToken) {
-        return userService.findByRefreshToken(refreshToken);
-    }
-
-    @PutMapping("/")
-    public void updateUser(@RequestBody User user) {
-        userService.updateUser(user);
-    }
-
-    @PutMapping("/update")
-    public ResponseEntity<?> update(@RequestBody User user) {
-        userService.updateUser(user);
-        return ResponseEntity.ok("User updated");
-    }
-
     @PostMapping("/add-profile-image")
     @Transactional
     public ResponseEntity<?> addProfileImage(@RequestParam MultipartFile file, Principal principal) {
         userService.addProfileImage(file, principal.getName());
         return ResponseEntity.ok("Image added");
     }
-
-//    @GetMapping("/get-user/{email}")
-//    @Transactional
-//    public ResponseEntity<?> getUser(@PathVariable String email) throws Exception {
-//        return ResponseEntity.ok(userService.findByEmail(email));
-//    }
 
     @GetMapping("/get")
     @Transactional
@@ -64,14 +36,6 @@ public class UserController {
         String email = jwtTokenProvider.getEmailFromToken(token);
         return ResponseEntity.ok(userService.findByEmailUserDTO(email));
     }
-
-//    @GetMapping("/get-user/{email}")
-//    @Transactional
-//    public ResponseEntity<?> getUser(@RequestHeader("Authorization") String authHeader) throws Exception {
-//        String token = authHeader.substring(7);
-//        String email = jwtTokenProvider.getEmailFromToken(token);
-//        return ResponseEntity.ok(userService.findByEmail(email));
-//    }
 
     @DeleteMapping("/delete/{email}")
     public ResponseEntity<?> deleteUser(@PathVariable String email) throws Exception {

@@ -2,6 +2,7 @@ package com.example.purchaseservice;
 
 import com.example.purchaseservice.dto.PurchaseDTO;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
@@ -19,9 +20,8 @@ public class PurchaseController {
 
     @PostMapping("/buy")
     @Transactional
-    public Purchase buyBook(@RequestBody PurchaseDTO purchaseDTO,
-                                     @RequestHeader("Authorization") String authHeader
-    ) {
+    public ResponseEntity<?> buyBook(@RequestBody PurchaseDTO purchaseDTO,
+                                     @RequestHeader("Authorization") String authHeader) {
         String token = authHeader.substring(7);
         String email = jwtTokenProvider.getEmailFromToken(token);
         Purchase purchase = Purchase.builder()
@@ -29,8 +29,12 @@ public class PurchaseController {
                 .sellerEmail(purchaseDTO.getSellerEmail())
                 .bookId(purchaseDTO.getBookId())
                 .build();
-        purchaseService.buyBook(purchase);
-        return purchaseService.buyBook(purchase);
+        try {
+            Purchase result = purchaseService.buyBook(purchase);
+            return ResponseEntity.ok(result);
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        }
     }
 
     @PostMapping("/{email}/{id}")

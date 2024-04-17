@@ -26,7 +26,7 @@ public class PurchaseService {
     @Autowired
     private KafkaTemplate<String, String> kafkaTemplate;
 
-    public Purchase buyBook(Purchase purchase) {
+    public Purchase buyBook(Purchase purchase) throws RuntimeException {
         CompletableFuture<String> userFuture = replyProcessor.waitForReply();
         kafkaTemplate.send(MessageBuilder.withPayload(purchase.getBuyerEmail())
                 .setHeader(KafkaHeaders.TOPIC, "user-service-request-get-user-by-email-topic")

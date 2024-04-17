@@ -17,7 +17,6 @@ public class BookUserDTO {
     private Long id;
     private String title;
     private byte[] image;
-//    private List<Genre> genres;
     private List<String> genres;
     private String description;
     private String author;
