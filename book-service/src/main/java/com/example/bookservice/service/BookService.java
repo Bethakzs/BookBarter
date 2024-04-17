@@ -12,6 +12,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.support.KafkaHeaders;
 import org.springframework.messaging.support.MessageBuilder;
@@ -171,7 +172,6 @@ public class BookService {
                     .id(book.getId())
                     .title(book.getTitle())
                     .image(book.getImage())
-//                    .genres(book.getGenres())
                     .genres(remakeGenres(book.getGenres()))
                     .description(book.getDescription())
                     .author(book.getAuthor())
@@ -205,4 +205,52 @@ public class BookService {
     public void save(Book book) {
         bookRepository.save(book);
     }
+
+    public BookUserDTO getBookById(Long id) {
+        Book book = bookRepository.findById(id).orElseThrow(() -> new RuntimeException("Book not found"));
+        CompletableFuture<String> userFuture = replyProcessor.waitForReply();
+        kafkaTemplate.send(MessageBuilder.withPayload(book.getUserEmail())
+                .setHeader(KafkaHeaders.TOPIC, "user-service-request-get-user-by-email-topic")
+                .setHeader(KafkaHeaders.REPLY_TOPIC, "book-service-response-get-user-by-email-topic")
+                .setHeader("serviceName", "book-service")
+                .build());
+        ObjectMapper mapper = new ObjectMapper();
+        String userJson = userFuture.join();
+        UserDTO userDTO;
+        try {
+            userDTO = mapper.readValue(userJson, UserDTO.class);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException("Error deserializing user", e);
+        }
+
+        return BookUserDTO.builder()
+                .id(book.getId())
+                .title(book.getTitle())
+                .image(book.getImage())
+                .genres(remakeGenres(book.getGenres()))
+                .description(book.getDescription())
+                .author(book.getAuthor())
+                .year(book.getYear())
+                .publishedBy(book.getPublishedBy())
+                .price(book.getPrice())
+                .user(userDTO)
+                .build();
+    }
+
+//    public BookDTO getBookById(Long id) {
+//        Book book = bookRepository.findById(id).orElse(null);
+//        if (book == null) {
+//            throw new RuntimeException("Book not found");
+//        }
+//        return BookDTO.builder()
+//                .id(String.valueOf(book.getId()))
+//                .title(book.getTitle())
+//                .description(book.getDescription())
+//                .author(book.getAuthor())
+//                .genres(remakeGenres(book.getGenres()))
+//                .year(String.valueOf(book.getYear()))
+//                .publishedBy(book.getPublishedBy())
+//                .price(String.valueOf(book.getPrice()))
+//                .build();
+//    }
 }

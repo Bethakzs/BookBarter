@@ -6,7 +6,6 @@ import lombok.Data;
 @Data
 @Builder
 public class PurchaseDTO {
-    private UserDTO buyer;
-    private UserDTO seller;
-    private BookDTO book;
+    private String sellerEmail;
+    private Long bookId;
 }

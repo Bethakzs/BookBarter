@@ -8,6 +8,7 @@
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
         <module name="eureka-service" />
+        <module name="purchase-service" />
         <module name="auth-service" />
         <module name="user-service" />
         <module name="book-service" />
@@ -21,6 +22,7 @@
       <module name="auth-service" options="-parameters" />
       <module name="book-service" options="-parameters" />
       <module name="eureka-service" options="-parameters" />
+      <module name="purchase-service" options="-parameters" />
       <module name="user-service" options="-parameters" />
     </option>
   </component>

@@ -78,6 +78,12 @@ public class BookController {
         return ResponseEntity.ok(bookService.getAllBooksByEmail(email));
     }
 
+    @GetMapping("/get/{id}")
+    @Transactional
+    public BookUserDTO getBookById(@PathVariable Long id) {
+        return bookService.getBookById(id);
+    }
+
     @GetMapping("/get-all")
     @Transactional
     public List<BookUserDTO> getAllBooks() {

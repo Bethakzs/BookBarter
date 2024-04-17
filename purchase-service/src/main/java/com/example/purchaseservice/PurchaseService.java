@@ -2,11 +2,11 @@ package com.example.purchaseservice;
 
 import com.example.purchaseservice.dto.BookDTO;
 import com.example.purchaseservice.dto.BookStatus;
-import com.example.purchaseservice.dto.PurchaseDTO;
 import com.example.purchaseservice.dto.UserDTO;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.support.KafkaHeaders;
 import org.springframework.messaging.support.MessageBuilder;
@@ -26,7 +26,7 @@ public class PurchaseService {
     @Autowired
     private KafkaTemplate<String, String> kafkaTemplate;
 
-    public void buyBook(Purchase purchase) {
+    public Purchase buyBook(Purchase purchase) {
         CompletableFuture<String> userFuture = replyProcessor.waitForReply();
         kafkaTemplate.send(MessageBuilder.withPayload(purchase.getBuyerEmail())
                 .setHeader(KafkaHeaders.TOPIC, "user-service-request-get-user-by-email-topic")
@@ -42,6 +42,8 @@ public class PurchaseService {
             throw new RuntimeException("Error deserializing user", e);
         }
 
+        System.out.println(buyer.getEmail());
+
         CompletableFuture<String> bookFuture = replyProcessor.waitForReply();
         kafkaTemplate.send(MessageBuilder.withPayload(purchase.getBookId().toString())
                 .setHeader(KafkaHeaders.TOPIC, "book-service-request-get-book-by-id-topic")
@@ -56,11 +58,10 @@ public class PurchaseService {
             throw new RuntimeException("Error deserializing book", e);
         }
 
-        if (buyer.getBuck() < book.getPrice()) {
-            throw new RuntimeException("Not enough bucks");
-        }
-        if (!book.getStatus().equals(BookStatus.AVAILABLE)) {
-            throw new RuntimeException("Book is not available");
+        System.out.println(book.getPrice());
+
+        if (buyer.getBucks() < book.getPrice()) {
+            throw new RuntimeException("Not enough money");
         }
 
         String requestBook = book.getId() + ":" + BookStatus.RESERVED;
@@ -68,13 +69,14 @@ public class PurchaseService {
                 .setHeader(KafkaHeaders.TOPIC, "book-service-request-update-book-topic")
                 .setHeader("serviceName", "purchase-service")
                 .build());
-        String requestUser = buyer.getEmail() + ":" + (buyer.getBuck() - book.getPrice());
+        String requestUser = buyer.getEmail() + ":" + (buyer.getBucks() - book.getPrice());
         kafkaTemplate.send(MessageBuilder.withPayload(requestUser)
                 .setHeader(KafkaHeaders.TOPIC, "user-service-request-update-user-topic")
                 .setHeader("serviceName", "purchase-service")
                 .build());
         purchase.setStatus(PurchaseStatus.RESERVED);
         purchaseRepository.save(purchase);
+        return purchase;
     }
 
     public void confirmPurchase(Long id, String email) {
@@ -121,8 +123,8 @@ public class PurchaseService {
                 .setHeader(KafkaHeaders.TOPIC, "book-service-request-update-book-topic")
                 .setHeader("serviceName", "purchase-service")
                 .build());
-        System.out.println(seller.getEmail() + ":" + (seller.getBuck() + book.getPrice()));
-        String requestUser = seller.getEmail() + ":" + (seller.getBuck() + book.getPrice());
+        System.out.println(seller.getEmail() + ":" + (seller.getBucks() + book.getPrice()));
+        String requestUser = seller.getEmail() + ":" + (seller.getBucks() + book.getPrice());
         kafkaTemplate.send(MessageBuilder.withPayload(requestUser)
                 .setHeader(KafkaHeaders.TOPIC, "user-service-request-update-user-topic")
                 .setHeader("serviceName", "purchase-service")

@@ -6,6 +6,13 @@ eureka:
     serviceUrl:
       defaultZone: http://localhost:8761/eureka/
 
+jwt:
+  secret: sheeesh
+  accessToken:
+    lifetime: 1h
+  refreshToken:
+    lifetime: 1d
+
 management:
   tracing:
     sampling:

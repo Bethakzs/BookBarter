@@ -48,12 +48,13 @@ public class AuthService {
         return ResponseEntity.ok().body(new JwtResponse(accessToken, refreshToken, roles));
     }
 
-
     @Transactional
     public ResponseEntity<?> createNewUser(UserRegistration regRequest) {
         Optional<User> existingUserEmail = userService.findByEmailForCheck(regRequest.getEmail());
         Optional<User> existingUserLogin = userService.findByLoginForCheck(regRequest.getLogin());
         Optional<User> existingUserPhone = userService.findByPhoneForCheck(passwordEncoder.encode(regRequest.getPhone()));
+        System.out.println(passwordEncoder.encode(regRequest.getPhone()));
+        System.out.println(regRequest.getPhone());
         if (existingUserEmail.isPresent() || existingUserLogin.isPresent() || existingUserPhone.isPresent()) {
             return new ResponseEntity<>(new AppError(HttpStatus.UNAUTHORIZED.value(), "User with this credentials already exists"), HttpStatus.UNAUTHORIZED);
         }

@@ -1,4 +1,4 @@
-package com.example.purchaseservice.dto;
+package com.example.bookservice.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -9,12 +9,11 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class UserDTO {
+public class UserDTOSinglePage {
     private String login;
     private String email;
-    private String pwd;
-    private String phone;
     private Double rating;
+    private String phone;
     private byte[] image;
-    private Long bucks;
 }
+

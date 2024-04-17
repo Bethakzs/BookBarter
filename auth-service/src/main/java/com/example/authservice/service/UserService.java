@@ -102,21 +102,6 @@ public class UserService implements UserDetailsService {
         return userRepository.findByEmail(email);
     }
 
-    public void addProfileImage(MultipartFile file, String name) {
-        User user = userRepository.findByEmail(name).get();
-        try {
-            user.setImage(file.getBytes());
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    public void addBucksToUser(String email, Long bucks) {
-        User user = userRepository.findByEmail(email).get();
-        user.setBucks(user.getBucks() + bucks);
-        userRepository.save(user);
-    }
-
     public Optional<User> findByIdForCheck(Long userId) {
         return userRepository.findById(userId);
     }

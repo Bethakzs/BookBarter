@@ -68,8 +68,8 @@ public class SecurityConfig {
     @Bean
     public CorsWebFilter corsWebFilter() {
         CorsConfiguration corsConfig = new CorsConfiguration();
-        corsConfig.setAllowedOrigins(List.of("http://localhost:4173"));
-//        corsConfig.setAllowedOrigins(List.of("http://localhost:4173", "http://localhost:5173"));
+//        corsConfig.setAllowedOrigins(List.of("http://localhost:4173"));
+        corsConfig.setAllowedOrigins(List.of("http://localhost:4173", "http://localhost:5173"));
 //        corsConfig.setAllowedOrigins(List.of("http://localhost:5173"));
         corsConfig.setAllowedMethods(List.of("*"));
         corsConfig.setAllowedHeaders(List.of("*"));

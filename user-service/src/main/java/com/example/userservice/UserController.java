@@ -82,9 +82,11 @@ public class UserController {
         return ResponseEntity.ok("User deleted");
     }
 
-    @PostMapping("/add-buck/{email}/{bucks}")
+    @PostMapping("/add-buck/{bucks}")
     @Transactional
-    public ResponseEntity<?> addBucksToUser(@PathVariable String email, @PathVariable Long bucks) {
+    public ResponseEntity<?> addBucksToUser(@PathVariable Long bucks, @RequestHeader("Authorization") String authHeader) {
+        String token = authHeader.substring(7);
+        String email = jwtTokenProvider.getEmailFromToken(token);
         userService.addBucksToUser(email, bucks);
         return ResponseEntity.ok("bucks added");
     }
