@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.CrossOrigin;
 @SpringBootApplication
 @EnableDiscoveryClient
 public class ApiGatewayServiceApplication {
-	//  For local
+	//  For local VPN
 	@Bean
 	public RouteLocator customRouteLocator(RouteLocatorBuilder builder) {
 		return builder.routes()
@@ -23,11 +23,11 @@ public class ApiGatewayServiceApplication {
 				.route("book-service", r -> r.path("/api/book/**")
 						.uri("http://26.185.15.150:8083"))
 				.route("wishlist-service", r -> r.path("/api/wishlist/**")
-						.uri("http://localhost:8084"))
+						.uri("http://26.185.15.150:8084"))
 				.route("purchase-service", r -> r.path("/api/purchase/**")
-						.uri("http://localhost:8085"))
+						.uri("http://26.185.15.150:8085"))
 				.route("review-service", r -> r.path("/api/review/**")
-						.uri("http://localhost:8086"))
+						.uri("http://26.185.15.150:8086"))
 				.route("auth-service", r -> r.path("/auth/**")
 						.uri("http://26.185.15.150:8087"))
 				.build();

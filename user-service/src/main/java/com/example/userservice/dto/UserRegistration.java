@@ -1,4 +1,4 @@
-package com.example.userservice;
+package com.example.userservice.dto;
 
 import lombok.Getter;
 import lombok.Setter;

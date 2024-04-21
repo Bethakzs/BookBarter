@@ -6,22 +6,16 @@ import com.example.authservice.dto.*;
 import com.example.authservice.exception.AppError;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
-import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -29,7 +23,6 @@ public class AuthService {
     private final JwtTokenService jwtTokenService;
     private final AuthenticationManager authenticationManager;
     private final UserService userService;
-    private final @Lazy PasswordEncoder passwordEncoder;
 
     @Transactional
     public ResponseEntity<?> createAuthToken(JwtRequest authRequest) {
@@ -76,6 +69,7 @@ public class AuthService {
         user.setRefreshToken(newRefreshToken);
         userService.updateUser(user);
         Set<Role> roles = user.getRoles();
+        System.out.println("refreshToken updated");
         return ResponseEntity.ok().body(new JwtResponse(newAccessToken, newRefreshToken, roles));
     }
 

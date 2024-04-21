@@ -1,7 +1,9 @@
-package com.example.userservice;
+package com.example.userservice.service;
 
 
+import com.example.userservice.dao.UserDAO;
 import com.example.userservice.dto.UserDTO;
+import com.example.userservice.entity.User;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;

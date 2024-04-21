@@ -70,7 +70,7 @@ public class BookController {
         return ResponseEntity.ok("Book removed ! " + id);
     }
 
-    @GetMapping("/get-email")
+    @GetMapping("/get")
     @Transactional
     public ResponseEntity<?> getBooksByEmail(@RequestHeader("Authorization") String authHeader) {
         String token = authHeader.substring(7);

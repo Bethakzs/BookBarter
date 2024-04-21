@@ -1,4 +1,4 @@
-package com.example.userservice;
+package com.example.userservice.entity;
 
 import com.fasterxml.jackson.annotation.JsonIdentityInfo;
 import com.fasterxml.jackson.annotation.ObjectIdGenerators;

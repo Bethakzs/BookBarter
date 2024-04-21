@@ -1,5 +1,6 @@
-package com.example.userservice;
+package com.example.userservice.dao;
 
+import com.example.userservice.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;

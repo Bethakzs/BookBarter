@@ -34,14 +34,12 @@ public class BookService {
     private final BookDAO bookRepository;
     private final ReplyProcessor replyProcessor;
     private final KafkaTemplate<String, String> kafkaTemplate;
-    private static long ID = 1;
 
     public Book saveBook(BookDTO book, MultipartFile image, String email) throws IOException {
         List<Genre> genres = book.getGenres().stream()
                 .map(genre -> Genre.valueOf(genre.toUpperCase()))
                 .collect(Collectors.toList());
         Book newBook = Book.builder()
-                .id(ID++)
                 .title(book.getTitle())
                 .image(image.getBytes())
                 .description(book.getDescription())

@@ -1,8 +1,8 @@
-package com.example.apigatewayservice;
+package com.example.apigatewayservice.security;
 
+import com.example.apigatewayservice.entity.Role;
 import io.jsonwebtoken.ExpiredJwtException;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContext;
@@ -11,11 +11,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.server.ServerWebExchange;
 import org.springframework.web.server.WebFilter;
 import org.springframework.web.server.WebFilterChain;
-import org.springframework.security.web.server.context.ServerSecurityContextRepository;
 import reactor.core.publisher.Mono;
-import reactor.util.context.Context;
-
-import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -33,7 +29,7 @@ public class JwtTokenFilter implements WebFilter {
                 .flatMap(jwt -> {
                     try {
                         String email = jwtTokenService.getEmail(jwt);
-                        List<Role> roles = jwtTokenService.getRoles(jwt); // змінено на список ролей
+                        List<Role> roles = jwtTokenService.getRoles(jwt);
                         List<SimpleGrantedAuthority> authorities = roles.stream()
                                 .map(role -> new SimpleGrantedAuthority(role.name()))
                                 .collect(Collectors.toList());

@@ -1,15 +1,17 @@
-package com.example.apigatewayservice;
+package com.example.userservice.entity;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+@Getter
 @NoArgsConstructor
 @AllArgsConstructor
-@Getter
 public enum Role {
-    ROLE_USER(2001),
-    ROLE_ADMIN(5320),
-    ROLE_EDITOR(1808);
+    ROLE_USER(1, 2001),
+    ROLE_ADMIN(2, 5320),
+    ROLE_EDITOR(3, 1808);
+
+    private int id;
     private int value;
 }

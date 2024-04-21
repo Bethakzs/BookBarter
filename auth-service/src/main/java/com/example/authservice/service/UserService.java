@@ -9,6 +9,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.apache.catalina.mapper.Mapper;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.support.KafkaHeaders;
@@ -62,7 +63,17 @@ public class UserService implements UserDetailsService {
     }
 
     public void updateUser(User user) {
-        userRepository.save(user);
+        ObjectMapper mapper = new ObjectMapper();
+        String userJson = null;
+        try {
+            userJson = mapper.writeValueAsString(user);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
+        kafkaTemplate.send(MessageBuilder.withPayload(userJson)
+                .setHeader(KafkaHeaders.TOPIC, "user-service-request-save-user")
+                .setHeader("serviceName", "auth-service")
+                .build());
     }
 
     @Transactional

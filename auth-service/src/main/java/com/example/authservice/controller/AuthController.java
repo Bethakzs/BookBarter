@@ -8,7 +8,6 @@ import com.example.authservice.service.AuthService;
 import com.example.authservice.entity.Role;
 import com.example.authservice.dto.UserRegistration;
 import com.example.authservice.service.JwtTokenService;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -16,8 +15,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -25,7 +22,6 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 @RestController
-//@CrossOrigin(origins = "http://localhost:4173", allowCredentials = "true")
 @RequiredArgsConstructor
 @RequestMapping("/auth")
 public class AuthController {
@@ -61,9 +57,9 @@ public class AuthController {
         }
     }
 
-
     @GetMapping("/refresh")
     public ResponseEntity<?> refreshAuthToken(@CookieValue("jwt") String refreshToken, HttpServletResponse response) {
+        System.out.println("refreshToken: " + refreshToken);
         return createResponseEntity(authService.refreshAuthToken(refreshToken), response);
     }
 

@@ -40,17 +40,6 @@ public class JwtTokenService {
         response.addCookie(refreshTokenCookie);
     }
 
-//    public void setTokenCookies(HttpServletResponse response, JwtResponse jwtResponse) {
-//        Cookie refreshTokenCookie = new Cookie("jwt", jwtResponse.getJwtRefreshToken());
-//        refreshTokenCookie.setHttpOnly(true);
-//        refreshTokenCookie.setMaxAge((int) jwtRefreshTokenLifetime.toHours());
-//        refreshTokenCookie.setSecure(false); // Встановіть це значення як true
-//        refreshTokenCookie.setPath("/");
-//        // Додайте цей рядок для встановлення SameSite
-////        response.setHeader("Set-Cookie", "SameSite=Strict; Secure");
-//        response.addCookie(refreshTokenCookie);
-//    }
-
     public String generateToken(UserDetails userDetails) {
         return generateJwt(userDetails, jwtAccessTokenLifetime);
     }

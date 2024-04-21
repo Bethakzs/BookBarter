@@ -1,7 +1,7 @@
 package com.example.userservice.kafka;
 
-import com.example.userservice.User;
-import com.example.userservice.UserService;
+import com.example.userservice.entity.User;
+import com.example.userservice.service.UserService;
 import com.example.userservice.dto.UserReviewDTO;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -87,6 +87,12 @@ public class KafkaConsumer {
         User user = userService.findByEmailForCheck(email)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
         user.setBucks(bucks);
+        userService.updateUser(user);
+    }
+
+    // Auth
+    @KafkaListener(topics = "user-service-request-save-user", groupId = "user-service")
+    public void handleSaveUserRequest(@Payload User user) {
         userService.updateUser(user);
     }
 }
