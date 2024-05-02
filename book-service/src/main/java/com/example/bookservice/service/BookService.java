@@ -62,6 +62,15 @@ public class BookService {
         bookRepository.deleteById(id);
     }
 
+
+    public List<Book> getAllBooksByEmailWithoutUser(String email) {
+        List<Book> books = bookRepository.findByUserEmail(email);
+        if (books.isEmpty()) {
+            return List.of();
+        }
+        return books;
+    }
+
     public List<BookUserDTO> getAllBooksByEmail(String email) {
         List<Book> books = bookRepository.findByUserEmail(email);
         if (books.isEmpty()) {
@@ -111,32 +120,20 @@ public class BookService {
     }
 
     private String translateGenre(Genre genre) {
-        switch (genre) {
-            case NOVEL:
-                return "Роман";
-            case POETRY:
-                return "Поезія";
-            case FANTASY:
-                return "Фантастика";
-            case FICTION:
-                return "Художня література";
-            case DETECTIVE:
-                return "Детектив";
-            case BIOGRAPHY:
-                return "Біографія";
-            case HISTORICAL:
-                return "Історичний";
-            case SCIENTIFIC:
-                return "Науковий";
-            case SCI_FI:
-                return "Наукова фантастика";
-            case CHILDREN:
-                return "Дитячий";
-            default:
-                return "Невідомий жанр";
-        }
+        return switch (genre) {
+            case NOVEL -> "Роман";
+            case POETRY -> "Поезія";
+            case FANTASY -> "Фантастика";
+            case FICTION -> "Художня література";
+            case DETECTIVE -> "Детектив";
+            case BIOGRAPHY -> "Біографія";
+            case HISTORICAL -> "Історичний";
+            case SCIENTIFIC -> "Науковий";
+            case SCI_FI -> "Наукова фантастика";
+            case CHILDREN -> "Дитячий";
+            default -> "Невідомий жанр";
+        };
     }
-
 
     public List<BookUserDTO> getAllAvailable() {
         List<Book> books = bookRepository.findAll();

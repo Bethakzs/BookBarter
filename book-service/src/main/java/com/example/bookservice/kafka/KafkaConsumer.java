@@ -1,5 +1,6 @@
 package com.example.bookservice.kafka;
 
+import com.example.bookservice.dto.BookUserDTO;
 import com.example.bookservice.entity.Book;
 import com.example.bookservice.service.BookService;
 import com.example.bookservice.entity.BookStatus;
@@ -15,6 +16,8 @@ import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -53,6 +56,21 @@ public class KafkaConsumer {
         } else {
             kafkaTemplate.send(replyTopic, "null");
         }
+    }
+
+    @Transactional
+    @KafkaListener(topics = "book-service-request-get-all-books-id", groupId = "book-service")
+    public void processGetIdBooks(ConsumerRecord<String, String> request) {
+        String email = request.value();
+        List<Long> booksId =  new ArrayList<>();
+        for(Book book : bookService.getAllBooksByEmailWithoutUser(email)) {
+            booksId.add(book.getId());
+        }
+        String booksIdString = booksId.toString();
+        kafkaTemplate.send(MessageBuilder.withPayload(booksIdString)
+                .setHeader(KafkaHeaders.TOPIC, "user-service-response-get-all-books-id")
+                .setHeader("serviceName", "user-service")
+                .build());
     }
 
     @KafkaListener(topics = "book-service-request-update-book-topic", groupId = "book-service")

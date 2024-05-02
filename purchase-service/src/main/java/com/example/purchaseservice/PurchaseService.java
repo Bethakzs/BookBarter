@@ -75,7 +75,12 @@ public class PurchaseService {
                 .setHeader("serviceName", "purchase-service")
                 .build());
         purchase.setStatus(PurchaseStatus.RESERVED);
+
         purchaseRepository.save(purchase);
+        kafkaTemplate.send(MessageBuilder.withPayload(buyer.getEmail())
+                .setHeader(KafkaHeaders.TOPIC, "notification-service-request-send-buy-book-topic")
+                .setHeader("serviceName", "purchase-service")
+                .build());
         return purchase;
     }
 

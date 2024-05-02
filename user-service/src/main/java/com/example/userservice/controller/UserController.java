@@ -18,13 +18,6 @@ public class UserController {
     private final UserService userService;
     private final JwtTokenProvider jwtTokenProvider;
 
-    @PostMapping("/add-profile-image")
-    @Transactional
-    public ResponseEntity<?> addProfileImage(@RequestParam MultipartFile file, Principal principal) {
-        userService.addProfileImage(file, principal.getName());
-        return ResponseEntity.ok("Image added");
-    }
-
     @GetMapping("/get")
     @Transactional
     public ResponseEntity<?> getUser(@RequestHeader("Authorization") String authHeader) throws Exception {

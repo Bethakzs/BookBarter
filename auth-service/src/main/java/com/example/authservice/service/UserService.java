@@ -63,17 +63,7 @@ public class UserService implements UserDetailsService {
     }
 
     public void updateUser(User user) {
-        ObjectMapper mapper = new ObjectMapper();
-        String userJson = null;
-        try {
-            userJson = mapper.writeValueAsString(user);
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
-        }
-        kafkaTemplate.send(MessageBuilder.withPayload(userJson)
-                .setHeader(KafkaHeaders.TOPIC, "user-service-request-save-user")
-                .setHeader("serviceName", "auth-service")
-                .build());
+        userRepository.save(user);
     }
 
     @Transactional
