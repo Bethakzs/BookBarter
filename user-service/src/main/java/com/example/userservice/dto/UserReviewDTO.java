@@ -13,6 +13,7 @@ public class UserReviewDTO {
     private String login;
     private String email;
     private String pwd;
+    private String phone;
     private Double rating;
     private byte[] image;
     private Long bucks;

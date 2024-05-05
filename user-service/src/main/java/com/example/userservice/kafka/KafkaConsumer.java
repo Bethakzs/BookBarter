@@ -32,6 +32,7 @@ public class KafkaConsumer {
                 .email(user.getEmail())
                 .pwd(user.getPwd())
                 .rating(user.getRating())
+                .phone(user.getPhone())
                 .image(user.getImage())
                 .bucks(user.getBucks())
                 .build();

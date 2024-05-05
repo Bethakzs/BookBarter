@@ -28,18 +28,14 @@ spring:
   kafka:
     consumer:
       bootstrap-servers: localhost:9092
-      group-id: book-service
+      group-id: notification-service
       auto-offset-reset: earliest
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
-      properties:
-        max.partition.fetch.bytes: 20971520 # 20 MB
     producer:
       bootstrap-servers: localhost:9092
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.apache.kafka.common.serialization.StringSerializer
-      properties:
-        max.request.size: 20971520 # 20 MB
   mail:
     host: smtp.gmail.com
     port: 587

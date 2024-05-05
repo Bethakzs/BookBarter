@@ -42,8 +42,6 @@ public class PurchaseService {
             throw new RuntimeException("Error deserializing user", e);
         }
 
-        System.out.println(buyer.getEmail());
-
         CompletableFuture<String> bookFuture = replyProcessor.waitForReply();
         kafkaTemplate.send(MessageBuilder.withPayload(purchase.getBookId().toString())
                 .setHeader(KafkaHeaders.TOPIC, "book-service-request-get-book-by-id-topic")
@@ -77,9 +75,16 @@ public class PurchaseService {
         purchase.setStatus(PurchaseStatus.RESERVED);
 
         purchaseRepository.save(purchase);
-        kafkaTemplate.send(MessageBuilder.withPayload(buyer.getEmail())
-                .setHeader(KafkaHeaders.TOPIC, "notification-service-request-send-buy-book-topic")
-                .setHeader("serviceName", "purchase-service")
+        String r1 = buyer.getEmail() + ":" + book.getTitle();
+        String r2 = purchase.getSellerEmail() + ":" + buyer.getPhone() + ":" + buyer.getEmail();
+        System.out.println(buyer.getPhone());
+        kafkaTemplate.send(MessageBuilder.withPayload(r1)
+                .setHeader(KafkaHeaders.TOPIC, "notification-service-request-buy-book")
+                .setHeader("serviceName", "notification-service")
+                .build());
+        kafkaTemplate.send(MessageBuilder.withPayload(r2)
+                .setHeader(KafkaHeaders.TOPIC, "notification-service-request-sell-book")
+                .setHeader("serviceName", "notification-service")
                 .build());
         return purchase;
     }

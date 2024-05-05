@@ -14,8 +14,9 @@ import org.springframework.stereotype.Service;
 public class NotificationService {
 
     private final JavaMailSender emailSender;
+    private static final String subject = "Book Barter";
 
-    public void sendSimpleMessage(String to, String subject, String text) {
+    public void sendSimpleMessage(String to, String text) {
 
         SimpleMailMessage message = new SimpleMailMessage();
 

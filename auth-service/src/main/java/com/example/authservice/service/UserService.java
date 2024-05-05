@@ -90,6 +90,11 @@ public class UserService implements UserDetailsService {
                 throw new RuntimeException(e);
             }
         }
+
+        kafkaTemplate.send(MessageBuilder.withPayload(user.getEmail())
+                .setHeader(KafkaHeaders.TOPIC, "notification-service-request-register")
+                .setHeader("serviceName", "notification-service")
+                .build());
         return userRepository.save(user);
     }
 

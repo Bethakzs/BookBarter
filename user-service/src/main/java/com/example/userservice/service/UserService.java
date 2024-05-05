@@ -19,6 +19,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.awt.print.Book;
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
@@ -76,7 +77,13 @@ public class UserService {
             }
         }
 
-        books.removeIf(book -> book.getStatus().equals(BookStatus.RESERVED) || book.getStatus().equals(BookStatus.SOLD));
+        Iterator<BookDTO> iterator = books.iterator();
+        while (iterator.hasNext()) {
+            BookDTO book = iterator.next();
+            if (book.getStatus().equals(BookStatus.RESERVED) || book.getStatus().equals(BookStatus.SOLD)) {
+                iterator.remove();
+            }
+        }
         return UserDTO.builder()
                 .login(user.getLogin())
                 .email(user.getEmail())

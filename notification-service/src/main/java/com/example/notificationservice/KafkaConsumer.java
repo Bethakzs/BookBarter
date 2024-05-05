@@ -19,9 +19,18 @@ public class KafkaConsumer {
     @KafkaListener(topics = "notification-service-request-send-buy-book-topic", groupId = "notification-service")
     public void processRequestCheck(ConsumerRecord<String, String> request) {
         String to = request.value();
-        String subject = "Book Barter";
-        String text = "Thank you for buying a book from Book Barter! Right now waiting when book will be delivered to you and after this you need to confirm that you received it on our site. Enjoy reading!";
+        String text = "Thank you for buying";
+        System.out.println("Sending email to: " + to);
 
-        notificationService.sendSimpleMessage(to, subject, text);
+        notificationService.sendSimpleMessage(to, text);
+    }
+
+    @KafkaListener(topics = "notification-service-request-register", groupId = "notification-service")
+    public void processRequestRegister(ConsumerRecord<String, String> request) {
+        String to = request.value();
+        String text = "Thank you for registration";
+        System.out.println("Sending email to: " + to);
+
+        notificationService.sendSimpleMessage(to, text);
     }
 }
