@@ -77,13 +77,17 @@ public class PurchaseService {
         purchaseRepository.save(purchase);
         String r1 = buyer.getEmail() + ":" + book.getTitle();
         String r2 = purchase.getSellerEmail() + ":" + buyer.getPhone() + ":" + buyer.getEmail();
-        System.out.println(buyer.getPhone());
         kafkaTemplate.send(MessageBuilder.withPayload(r1)
-                .setHeader(KafkaHeaders.TOPIC, "notification-service-request-buy-book")
-                .setHeader("serviceName", "notification-service")
+                .setHeader(KafkaHeaders.TOPIC, "email-service-request-buy-book")
+                .setHeader("serviceName", "email-service")
                 .build());
         kafkaTemplate.send(MessageBuilder.withPayload(r2)
-                .setHeader(KafkaHeaders.TOPIC, "notification-service-request-sell-book")
+                .setHeader(KafkaHeaders.TOPIC, "email-service-request-sell-book")
+                .setHeader("serviceName", "email-service")
+                .build());
+        String r3 = book.getTitle() + ":" + purchase.getSellerEmail() + ":" + buyer.getLogin()+ ":" + buyer.getPhone() + ":" + buyer.getRating() + ":" + book.getPrice();
+        kafkaTemplate.send(MessageBuilder.withPayload(r3)
+                .setHeader(KafkaHeaders.TOPIC, "notification-service-request-add-request")
                 .setHeader("serviceName", "notification-service")
                 .build());
         return purchase;

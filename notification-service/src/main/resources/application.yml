@@ -1,0 +1,53 @@
+server:
+  port: 8088
+  address: 26.185.15.150
+
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: http://localhost:8761/eureka/
+
+jwt:
+  secret: sheeesh
+  accessToken:
+    lifetime: 1h
+  refreshToken:
+    lifetime: 1d
+
+management:
+  tracing:
+    sampling:
+      probability: 1.0
+
+spring:
+  application:
+    name: notification-service
+  datasource:
+    url: jdbc:postgresql://localhost:5432/notification
+    username: postgres
+    password: 12345
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: true
+  main:
+    allow-circular-references: true
+  servlet:
+    multipart:
+      max-file-size: 15MB
+      max-request-size: 15MB
+      enabled: true
+  kafka:
+    consumer:
+      bootstrap-servers: localhost:9092
+      group-id: notification-service
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+    producer:
+      bootstrap-servers: localhost:9092
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+      properties:
+        max.request.size: 20971520 # 20 MB

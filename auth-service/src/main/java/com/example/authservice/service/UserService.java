@@ -102,8 +102,8 @@ public class UserService implements UserDetailsService, UserServiceStrategy {
         }
 
         kafkaTemplate.send(MessageBuilder.withPayload(user.getEmail())
-                .setHeader(KafkaHeaders.TOPIC, "notification-service-request-register")
-                .setHeader("serviceName", "notification-service")
+                .setHeader(KafkaHeaders.TOPIC, "email-service-request-register")
+                .setHeader("serviceName", "email-service")
                 .build());
         return userRepository.save(user);
     }

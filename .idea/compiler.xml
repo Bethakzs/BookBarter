@@ -14,10 +14,11 @@
         <module name="purchase-service" />
         <module name="user-service" />
         <module name="wishlist-service" />
+        <module name="notification-service" />
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>
-      <module name="notification-service" target="17" />
+      <module name="email-service" target="17" />
     </bytecodeTargetLevel>
   </component>
   <component name="JavacSettings">
@@ -25,6 +26,7 @@
       <module name="api-gateway-service" options="-parameters" />
       <module name="auth-service" options="-parameters" />
       <module name="book-service" options="-parameters" />
+      <module name="email-service" options="-parameters" />
       <module name="eureka-service" options="-parameters" />
       <module name="notification-service" options="-parameters" />
       <module name="purchase-service" options="-parameters" />

@@ -18,11 +18,11 @@ func main() {
 	}
 	ip := addrs[0].(*net.IPNet).IP.String()
 
-	instance := eureka.NewInstanceInfo(ip, "notification-service", "notification-service", 8088, 30, false)
-	client.RegisterInstance("notification-service", instance)
+	instance := eureka.NewInstanceInfo(ip, "email-service", "email-service", 8089, 30, false)
+	client.RegisterInstance("email-service", instance)
 
-	topics := []string{"notification-service-request-buy-book", "notification-service-request-sell-book", "notification-service-request-register"}
-	groupID := "notification-service"
+	topics := []string{"email-service-request-buy-book", "email-service-request-sell-book", "email-service-request-register"}
+	groupID := "email-service"
 
 	for _, topic := range topics {
 		go startConsumer(topic, groupID)
