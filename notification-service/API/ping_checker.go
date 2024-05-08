@@ -53,7 +53,7 @@ func startPingChecker() {
 				return
 			}
 			duration := time.Since(start).Seconds() * 1000 // Convert to milliseconds
-			durationStr := fmt.Sprintf("%.1f", duration)   // Заокруглення до одного знаку після коми
+			durationStr := fmt.Sprintf("%.1f", duration)
 			durationFloat, err := strconv.ParseFloat(durationStr, 64)
 			if err != nil {
 				c.JSON(500, gin.H{

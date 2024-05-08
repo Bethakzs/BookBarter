@@ -19,7 +19,18 @@ import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
-public class AuthService {
+public class AuthService implements UserServiceStrategy {
+
+    @Override
+    @Transactional
+    public ResponseEntity<?> execute(JwtRequest request) {
+        if (request.getEmail() != null && request.getPwd() != null) {
+            return createAuthToken(request);
+        } else {
+            return new ResponseEntity<>(new AppError(HttpStatus.BAD_REQUEST.value(), "Unsupported request type"), HttpStatus.BAD_REQUEST);
+        }
+    }
+
     private final JwtTokenService jwtTokenService;
     private final AuthenticationManager authenticationManager;
     private final UserService userService;

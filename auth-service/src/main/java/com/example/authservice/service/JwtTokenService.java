@@ -31,26 +31,12 @@ public class JwtTokenService {
     @Value("${jwt.refreshToken.lifetime}")
     private Duration jwtRefreshTokenLifetime;
 
-//    public void setTokenCookies(HttpServletResponse response, JwtResponse jwtResponse) {
-//        Cookie refreshTokenCookie = new Cookie("jwt", jwtResponse.getJwtRefreshToken());
-//        refreshTokenCookie.setHttpOnly(true);
-//        refreshTokenCookie.setMaxAge((int) jwtRefreshTokenLifetime.toHours());
-//        refreshTokenCookie.setSecure(false);
-//        refreshTokenCookie.setPath("/");
-//        response.addCookie(refreshTokenCookie);
-//    }
-
     public void setTokenCookies(HttpServletResponse response, JwtResponse jwtResponse) {
         String refreshToken = jwtResponse.getJwtRefreshToken();
         int maxAge = (int) jwtRefreshTokenLifetime.toHours() * 60 * 60;
         String cookieValue = String.format("jwt=%s; Path=/; HttpOnly; Secure; SameSite=None; Max-Age=%s", refreshToken, maxAge);
         response.setHeader("Set-Cookie", cookieValue);
     }
-
-//    public void setTokenCookies(HttpServletResponse response, String refreshToken) {
-//        String cookieValue = String.format("jwt=%s; Path=/; HttpOnly; Secure; SameSite=None; Max-Age=%s", refreshToken, 24 * 60 * 60);
-//        response.setHeader("Set-Cookie", cookieValue);
-//    }
 
     public String generateToken(UserDetails userDetails) {
         return generateJwt(userDetails, jwtAccessTokenLifetime);

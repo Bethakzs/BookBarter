@@ -18,6 +18,7 @@ import org.springframework.kafka.support.KafkaHeaders;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+import util.GenreTranslator;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -34,6 +35,7 @@ public class BookService {
     private final BookDAO bookRepository;
     private final ReplyProcessor replyProcessor;
     private final KafkaTemplate<String, String> kafkaTemplate;
+    private final GenreTranslator genreTranslator;
 
     public Book saveBook(BookDTO book, MultipartFile image, String email) throws IOException {
         List<Genre> genres = book.getGenres().stream()
@@ -113,26 +115,10 @@ public class BookService {
     private List<String> remakeGenres(List<Genre> genres) {
         if (genres != null) {
             return genres.stream()
-                    .map(this::translateGenre)
+                    .map(genreTranslator::translate)
                     .collect(Collectors.toList());
         }
         return null;
-    }
-
-    private String translateGenre(Genre genre) {
-        return switch (genre) {
-            case NOVEL -> "Роман";
-            case POETRY -> "Поезія";
-            case FANTASY -> "Фантастика";
-            case FICTION -> "Художня література";
-            case DETECTIVE -> "Детектив";
-            case BIOGRAPHY -> "Біографія";
-            case HISTORICAL -> "Історичний";
-            case SCIENTIFIC -> "Науковий";
-            case SCI_FI -> "Наукова фантастика";
-            case CHILDREN -> "Дитячий";
-            default -> "Невідомий жанр";
-        };
     }
 
     public List<BookUserDTO> getAllAvailable() {
