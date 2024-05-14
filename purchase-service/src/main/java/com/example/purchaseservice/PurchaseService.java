@@ -90,6 +90,10 @@ public class PurchaseService {
                 .setHeader(KafkaHeaders.TOPIC, "notification-service-request-add-request")
                 .setHeader("serviceName", "notification-service")
                 .build());
+        kafkaTemplate.send(MessageBuilder.withPayload(purchase.getSellerEmail())
+                .setHeader(KafkaHeaders.TOPIC, "user-service-request-change-notification-true")
+                .setHeader("serviceName", "user-service")
+                .build());
         return purchase;
     }
 

@@ -21,8 +21,8 @@ public class KafkaConsumer {
                 .email(parts[1])
                 .login(parts[2])
                 .phone(parts[3])
-                .rating(parts[4])
-                .price(Double.valueOf(parts[5]))
+                .rating(Double.valueOf(parts[4]))
+                .price(Integer.parseInt(parts[5]))
                 .build();
         notificationService.add(notification);
         ID++;

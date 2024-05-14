@@ -10,6 +10,6 @@ public class responseDTO {
     private String title;
     private String login;
     private String phone;
-    private String rating;
-    private Double price;
+    private Double rating;
+    private int price;
 }

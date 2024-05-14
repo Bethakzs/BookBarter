@@ -5,7 +5,6 @@ import com.example.userservice.dao.UserDAO;
 import com.example.userservice.dto.BookStatus;
 import com.example.userservice.dto.request.BookDTO;
 import com.example.userservice.dto.UserDTO;
-import com.example.userservice.dto.response.UserBooksDTO;
 import com.example.userservice.entity.User;
 import com.example.userservice.kafka.ReplyProcessor;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -91,6 +90,7 @@ public class UserService {
                 .rating(user.getRating())
                 .image(user.getImage())
                 .bucks(user.getBucks())
+                .notifications(user.isNotifications())
                 .books(books)
                 .build();
     }
@@ -111,16 +111,6 @@ public class UserService {
     @Transactional
     public Optional<User> findByEmailForCheck(String email) {
         return userRepository.findByEmail(email);
-    }
-
-    public void addProfileImage(MultipartFile file, String name) {
-        User user = userRepository.findByEmail(name).get();
-        try {
-            user.setImage(file.getBytes());
-            userRepository.save(user);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
     }
 
     public void addBucksToUser(String name, Long bucks) {

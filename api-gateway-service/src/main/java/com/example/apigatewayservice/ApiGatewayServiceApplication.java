@@ -30,7 +30,7 @@ public class ApiGatewayServiceApplication {
 						.uri("http://26.185.15.150:8086"))
 				.route("auth-service", r -> r.path("/auth/**")
 						.uri("http://26.185.15.150:8087"))
-				.route("notification-service", r -> r.path("/api/notification/**")
+				.route("notification-service", r -> r.path("/api/notifications/**")
 						.uri("http://26.185.15.150:8088"))
 				.build();
 	}

@@ -92,6 +92,7 @@ public class UserService implements UserDetailsService, UserServiceStrategy {
                 .bucks(5L)
                 .rating(3.5)
                 .roles(new HashSet<>(Collections.singletonList(Role.ROLE_USER)))
+                .notifications(false)
                 .build();
         if(userRegistration.getImage() != null) {
             try {

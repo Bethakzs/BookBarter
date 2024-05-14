@@ -33,9 +33,9 @@ public class Notification {
     String phone;
 
     @Column(name = "rating", nullable = false)
-    String rating;
+    Double rating;
 
     @Column(name = "price", nullable = false)
-    Double price;
+    int price;
 
 }
