@@ -1,7 +1,6 @@
 package main
 
 import (
-	"BookBarter/API"
 	_ "fmt"
 	"github.com/ArthurHlt/go-eureka-client/eureka"
 	"net"
@@ -28,7 +27,7 @@ func main() {
 		go startConsumer(topic, groupID)
 	}
 
-	go API.StartAPI()
+	go StartAPI()
 
 	select {}
 }

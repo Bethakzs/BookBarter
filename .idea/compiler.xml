@@ -11,6 +11,7 @@
         <module name="auth-service" />
         <module name="book-service" />
         <module name="api-gateway-service" />
+        <module name="review-service" />
         <module name="purchase-service" />
         <module name="user-service" />
         <module name="wishlist-service" />
@@ -30,6 +31,7 @@
       <module name="eureka-service" options="-parameters" />
       <module name="notification-service" options="-parameters" />
       <module name="purchase-service" options="-parameters" />
+      <module name="review-service" options="-parameters" />
       <module name="user-service" options="-parameters" />
       <module name="wishlist-service" options="-parameters" />
     </option>

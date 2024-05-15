@@ -1,17 +1,10 @@
 server:
-  port: 8085
+  port: 8086
 
 eureka:
   client:
     serviceUrl:
       defaultZone: http://localhost:8761/eureka/
-
-jwt:
-  secret: sheeesh
-  accessToken:
-    lifetime: 1h
-  refreshToken:
-    lifetime: 1d
 
 management:
   tracing:
@@ -20,9 +13,9 @@ management:
 
 spring:
   application:
-    name: purchase-service
+    name: review-service
   datasource:
-    url: jdbc:postgresql://localhost:5432/purchase
+    url: jdbc:postgresql://localhost:5432/review
     username: postgres
     password: 12345
     driver-class-name: org.postgresql.Driver
@@ -40,7 +33,7 @@ spring:
   kafka:
     consumer:
       bootstrap-servers: localhost:9092
-      group-id: purchase-service
+      group-id: review-service
       auto-offset-reset: earliest
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
