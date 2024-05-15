@@ -1,9 +1,10 @@
 version: '3'
 services:
-#  eureka:
-#    image: eureka-service
-#    ports:
-#      - 8761:8761
+  eureka:
+    build: ./eureka-service
+    image: eureka-service
+    ports:
+      - 8761:8761
   zookeeper:
     image: confluentinc/cp-zookeeper:7.4.4
     environment:
@@ -20,10 +21,209 @@ services:
     environment:
       KAFKA_BROKER_ID: -1
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
       KAFKA_MESSAGE_MAX_BYTES: 20971520 # 20 MB
       KAFKA_REPLICA_FETCH_MAX_BYTES: 20971520 # 20 MB
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'true'
+  user-db:
+    image: postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 12345
+      POSTGRES_DB: user
+  user-service:
+    build: ./user-service
+    image: user-service
+    depends_on:
+      - user-db
+      - eureka
+      - kafka
+    ports:
+      - 8082:8082
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://user-db:5432/user
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: 12345
+      SPRING_DATASOURCE_DRIVER_CLASS_NAME: org.postgresql.Driver
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka:8761/eureka/
+      JWT_SECRET: sheeesh
+      JWT_ACCESS_TOKEN_LIFETIME: 1h
+      JWT_REFRESH_TOKEN_LIFETIME: 1d
+      SPRING_KAFKA_CONSUMER_BOOTSTRAP_SERVERS: kafka:9092
+      SPRING_KAFKA_PRODUCER_BOOTSTRAP_SERVERS: kafka:9092
+  auth-service:
+    build: ./auth-service
+    image: auth-service
+    depends_on:
+      - eureka
+      - kafka
+    ports:
+      - 8087:8087
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://user-db:5432/user
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: 12345
+      SPRING_DATASOURCE_DRIVER_CLASS_NAME: org.postgresql.Driver
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka:8761/eureka/
+      JWT_SECRET: sheeesh
+      JWT_ACCESS_TOKEN_LIFETIME: 1h
+      JWT_REFRESH_TOKEN_LIFETIME: 1d
+      SPRING_KAFKA_CONSUMER_BOOTSTRAP_SERVERS: kafka:9092
+      SPRING_KAFKA_PRODUCER_BOOTSTRAP_SERVERS: kafka:9092
+  api-gateway:
+    build: ./api-gateway-service
+    image: api-gateway
+    depends_on:
+      - eureka
+      - auth-service
+    ports:
+      - 8000:8000
+    environment:
+      SERVER_PORT: 8000
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka:8761/eureka/
+      JWT_SECRET: sheeesh
+      JWT_ACCESS_TOKEN_LIFETIME: 1h
+      JWT_REFRESH_TOKEN_LIFETIME: 1d
+      MANAGEMENT_TRACING_SAMPLING_PROBABILITY: 1.0
+  book-db:
+    image: postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 12345
+      POSTGRES_DB: book
+  book-service:
+    build: ./book-service
+    image: book-service
+    depends_on:
+      - book-db
+      - eureka
+      - kafka
+    ports:
+      - 8083:8083
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://book-db:5432/book
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: 12345
+      SPRING_DATASOURCE_DRIVER_CLASS_NAME: org.postgresql.Driver
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka:8761/eureka/
+      SPRING_KAFKA_CONSUMER_BOOTSTRAP_SERVERS: kafka:9092
+      SPRING_KAFKA_PRODUCER_BOOTSTRAP_SERVERS: kafka:9092
+      JWT_SECRET: sheeesh
+      JWT_ACCESS_TOKEN_LIFETIME: 1h
+      JWT_REFRESH_TOKEN_LIFETIME: 1d
+  wishlist-db:
+    image: postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 12345
+      POSTGRES_DB: wishlist
+  wishlist-service:
+    build: ./wishlist-service
+    image: wishlist-service
+    depends_on:
+      - wishlist-db
+      - eureka
+      - kafka
+    ports:
+      - 8084:8084
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://wishlist-db:5432/wishlist
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: 12345
+      SPRING_DATASOURCE_DRIVER_CLASS_NAME: org.postgresql.Driver
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka:8761/eureka/
+      SPRING_KAFKA_CONSUMER_BOOTSTRAP_SERVERS: kafka:9092
+      SPRING_KAFKA_PRODUCER_BOOTSTRAP_SERVERS: kafka:9092
+      JWT_SECRET: sheeesh
+      JWT_ACCESS_TOKEN_LIFETIME: 1h
+      JWT_REFRESH_TOKEN_LIFETIME: 1d
+  purchase-db:
+    image: postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 12345
+      POSTGRES_DB: purchase
+  purchase-service:
+    build: ./purchase-service
+    image: purchase-service
+    depends_on:
+      - purchase-db
+      - eureka
+      - kafka
+    ports:
+      - 8085:8085
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://purchase-db:5432/purchase
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: 12345
+      SPRING_DATASOURCE_DRIVER_CLASS_NAME: org.postgresql.Driver
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka:8761/eureka/
+      SPRING_KAFKA_CONSUMER_BOOTSTRAP_SERVERS: kafka:9092
+      SPRING_KAFKA_PRODUCER_BOOTSTRAP_SERVERS: kafka:9092
+      JWT_SECRET: sheeesh
+      JWT_ACCESS_TOKEN_LIFETIME: 1h
+      JWT_REFRESH_TOKEN_LIFETIME: 1d
+  notification-db:
+    image: postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 12345
+      POSTGRES_DB: notification
+  notification-service:
+    build: ./notification-service
+    image: notification-service
+    depends_on:
+      - notification-db
+      - eureka
+      - kafka
+    ports:
+      - 8088:8088
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://notification-db:5432/notification
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: 12345
+      SPRING_DATASOURCE_DRIVER_CLASS_NAME: org.postgresql.Driver
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka:8761/eureka/
+      SPRING_KAFKA_CONSUMER_BOOTSTRAP_SERVERS: kafka:9092
+      SPRING_KAFKA_PRODUCER_BOOTSTRAP_SERVERS: kafka:9092
+      JWT_SECRET: sheeesh
+      JWT_ACCESS_TOKEN_LIFETIME: 1h
+      JWT_REFRESH_TOKEN_LIFETIME: 1d
+  review-db:
+    image: postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 12345
+      POSTGRES_DB: review
+  review-service:
+    build: ./review-service
+    image: review-service
+    depends_on:
+      - review-db
+      - eureka
+      - kafka
+    ports:
+      - 8086:8086
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://review-db:5432/review
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: 12345
+      SPRING_DATASOURCE_DRIVER_CLASS_NAME: org.postgresql.Driver
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka:8761/eureka/
+      SPRING_KAFKA_CONSUMER_BOOTSTRAP_SERVERS: kafka:9092
+      SPRING_KAFKA_PRODUCER_BOOTSTRAP_SERVERS: kafka:9092
+  email-service:
+    build: ./email-service
+    image: email-service
+    depends_on:
+      - eureka
+      - kafka
+    ports:
+      - 8089:8089
+    environment:
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka:8761/eureka/
+      SPRING_KAFKA_CONSUMER_BOOTSTRAP_SERVERS: kafka:9092
+      SPRING_KAFKA_PRODUCER_BOOTSTRAP_SERVERS: kafka:9092

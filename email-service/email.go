@@ -24,7 +24,7 @@ func startConsumer(topic string, groupID string) {
 		}
 		log.Printf("topic: %s, message: %s", m.Topic, string(m.Value))
 		switch topic {
-		case "notification-service-request-buy-book":
+		case "email-service-request-buy-book":
 			parts := strings.Split(string(m.Value), ":")
 			if len(parts) < 2 {
 				log.Printf("Invalid message format: %s", string(m.Value))
@@ -34,7 +34,7 @@ func startConsumer(topic string, groupID string) {
 			bookTitle := parts[1]
 			message := "<h1>Ви успішно замовили книгу " + "'" + bookTitle + "'" + "</h1><p>Тепер продавець зв'яжеться з вами для уточнення доставки, очікуйте.</p><p><b>Примітка:</b> Якщо продавець не зв'яжеться з вами протягом 3 днів, зверніться до служби підтримки. Якщо ви відміните замовлення, ви втратите свої гроші. Не підтверджуйте отримання книги, якщо ви ще не отримали її. Дякуємо за замовлення " + bookTitle + "!</p>"
 			sendHTMLMessage(buyerEmail, "Notification Service", message)
-		case "notification-service-request-sell-book":
+		case "email-service-request-sell-book":
 			parts := strings.Split(string(m.Value), ":")
 			if len(parts) < 3 {
 				log.Printf("Invalid message format: %s", string(m.Value))
@@ -45,7 +45,7 @@ func startConsumer(topic string, groupID string) {
 			buyerEmail := parts[2]
 			message := "<h1>Вашу книгу було замовлено!</h1><p>Покупець зв'яжеться з вами за допомогою наступних контактних даних:</p><p>Телефон: " + buyerPhone + "</p><p>Email: " + buyerEmail + "</p><p><b>Примітка:</b> Якщо покупець не зв'яжеться з вами протягом 3 днів, зверніться до служби підтримки. Дякуємо за використання нашого сервісу обміну книгами!</p>"
 			sendHTMLMessage(sellerEmail, "Notification Service", message)
-		case "notification-service-request-register":
+		case "email-service-request-register":
 			sendHTMLMessage(string(m.Value), "Notification Service", "<h1>Вітаємо!</h1><p>Ви успішно зареєструвалися в нашому сервісі обміну книгами! Ми раді, що ви приєдналися до нас. Тут ви можете знайти багато цікавих книг від інших користувачів та поділитися своїми. Якщо у вас виникнуть питання, будь ласка, зверніться до служби підтримки. Дякуємо, що ви з нами!</p>")
 		}
 	}

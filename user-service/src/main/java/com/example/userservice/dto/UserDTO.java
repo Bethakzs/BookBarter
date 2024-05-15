@@ -19,5 +19,6 @@ public class UserDTO {
     private Double rating;
     private byte[] image;
     private Long bucks;
+    private boolean notifications;
     private List<BookDTO> books;
 }

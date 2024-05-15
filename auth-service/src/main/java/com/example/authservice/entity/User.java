@@ -55,4 +55,7 @@ public class User {
 
     @Column(name = "refresh_token")
     String refreshToken;
+
+    @Column(name = "notifications")
+    boolean notifications;
 }

@@ -1,5 +1,6 @@
 package com.example.userservice.kafka;
 
+import com.example.userservice.dao.UserDAO;
 import com.example.userservice.entity.User;
 import com.example.userservice.service.UserService;
 import com.example.userservice.dto.UserReviewDTO;
@@ -20,6 +21,7 @@ public class KafkaConsumer {
 
     private final UserService userService;
     private final KafkaTemplate<String, String> kafkaTemplate;
+    private final UserDAO userDAO;
 
     // Review
     @KafkaListener(topics = "user-service-request-get-user-by-email-topic", groupId = "user-service")
@@ -95,5 +97,22 @@ public class KafkaConsumer {
     @KafkaListener(topics = "user-service-request-save-user", groupId = "user-service")
     public void handleSaveUserRequest(@Payload User user) {
         userService.updateUser(user);
+    }
+
+    //Notification
+    @KafkaListener(topics = "user-service-request-change-notification-true", groupId = "user-service")
+    public void handleChangeUserNotificationTrue(String request) {
+        User user = userService.findByEmailForCheck(request)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+        user.setNotifications(true);
+        userDAO.save(user);
+    }
+    //Notification
+    @KafkaListener(topics = "user-service-request-change-notification-false", groupId = "user-service")
+    public void handleChangeUserNotificationFalse(String request) {
+        User user = userService.findByEmailForCheck(request)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+        user.setNotifications(false);
+        userDAO.save(user);
     }
 }
