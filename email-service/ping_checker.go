@@ -69,7 +69,7 @@ func startPingChecker() {
 		})
 	})
 
-	err := r.Run(":8088")
+	err := r.Run(":8089")
 	if err != nil {
 		return
 	}

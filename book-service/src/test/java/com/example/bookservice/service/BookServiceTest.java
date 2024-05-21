@@ -1,21 +1,13 @@
 package com.example.bookservice.service;
 
 import com.example.bookservice.dao.BookDAO;
-import com.example.bookservice.dto.BookDTO;
 import com.example.bookservice.entity.Book;
-import com.example.bookservice.kafka.ReplyProcessor;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.http.MediaType;
-import org.springframework.kafka.core.KafkaTemplate;
-import org.springframework.mock.web.MockMultipartFile;
-import org.springframework.web.multipart.MultipartFile;
-import util.GenreTranslator;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -32,7 +24,7 @@ public class BookServiceTest {
     private BookDAO bookRepository;
 
     @InjectMocks
-    private BookService bookService;
+    private BookServiceImpl bookService;
 
     @Test
     public void testGetBook() {

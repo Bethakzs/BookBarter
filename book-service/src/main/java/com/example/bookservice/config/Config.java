@@ -12,7 +12,7 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.reactive.CorsWebFilter;
 import org.springframework.web.cors.reactive.UrlBasedCorsConfigurationSource;
-import util.GenreTranslator;
+//import util.GenreTranslator;
 
 import java.util.List;
 
@@ -25,11 +25,11 @@ public class Config {
         return new BCryptPasswordEncoder();
     }
 
-    @Bean
-    @Scope(value = ConfigurableBeanFactory.SCOPE_SINGLETON)
-    public GenreTranslator getGenreTranslator() {
-        return new GenreTranslator();
-    }
+//    @Bean
+//    @Scope(value = ConfigurableBeanFactory.SCOPE_SINGLETON)
+//    public GenreTranslator getGenreTranslator() {
+//        return new GenreTranslator();
+//    }
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {

@@ -34,13 +34,21 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: 12345
       POSTGRES_DB: user
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      interval: 5s
+      timeout: 5s
+      retries: 3
   user-service:
     build: ./user-service
     image: user-service
     depends_on:
-      - user-db
-      - eureka
-      - kafka
+      user-db:
+        condition: service_healthy
+      eureka:
+        condition: service_started
+      kafka:
+        condition: service_started
     ports:
       - 8082:8082
     environment:
@@ -58,8 +66,12 @@ services:
     build: ./auth-service
     image: auth-service
     depends_on:
-      - eureka
-      - kafka
+      user-db:
+        condition: service_healthy
+      eureka:
+        condition: service_started
+      kafka:
+        condition: service_started
     ports:
       - 8087:8087
     environment:
@@ -77,8 +89,10 @@ services:
     build: ./api-gateway-service
     image: api-gateway
     depends_on:
-      - eureka
-      - auth-service
+      eureka:
+        condition: service_started
+      auth-service:
+        condition: service_started
     ports:
       - 8000:8000
     environment:
@@ -94,13 +108,21 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: 12345
       POSTGRES_DB: book
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      interval: 5s
+      timeout: 5s
+      retries: 3
   book-service:
     build: ./book-service
     image: book-service
     depends_on:
-      - book-db
-      - eureka
-      - kafka
+      book-db:
+        condition: service_healthy
+      eureka:
+        condition: service_started
+      kafka:
+        condition: service_started
     ports:
       - 8083:8083
     environment:
@@ -120,13 +142,21 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: 12345
       POSTGRES_DB: wishlist
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      interval: 5s
+      timeout: 5s
+      retries: 3
   wishlist-service:
     build: ./wishlist-service
     image: wishlist-service
     depends_on:
-      - wishlist-db
-      - eureka
-      - kafka
+      wishlist-db:
+        condition: service_healthy
+      eureka:
+        condition: service_started
+      kafka:
+        condition: service_started
     ports:
       - 8084:8084
     environment:
@@ -146,13 +176,21 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: 12345
       POSTGRES_DB: purchase
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      interval: 5s
+      timeout: 5s
+      retries: 3
   purchase-service:
     build: ./purchase-service
     image: purchase-service
     depends_on:
-      - purchase-db
-      - eureka
-      - kafka
+      purchase-db:
+        condition: service_healthy
+      eureka:
+        condition: service_started
+      kafka:
+        condition: service_started
     ports:
       - 8085:8085
     environment:
@@ -172,13 +210,21 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: 12345
       POSTGRES_DB: notification
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      interval: 5s
+      timeout: 5s
+      retries: 3
   notification-service:
     build: ./notification-service
     image: notification-service
     depends_on:
-      - notification-db
-      - eureka
-      - kafka
+      notification-db:
+        condition: service_healthy
+      eureka:
+        condition: service_started
+      kafka:
+        condition: service_started
     ports:
       - 8088:8088
     environment:
@@ -198,13 +244,21 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: 12345
       POSTGRES_DB: review
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      interval: 5s
+      timeout: 5s
+      retries: 3
   review-service:
     build: ./review-service
     image: review-service
     depends_on:
-      - review-db
-      - eureka
-      - kafka
+      review-db:
+        condition: service_healthy
+      eureka:
+        condition: service_started
+      kafka:
+        condition: service_started
     ports:
       - 8086:8086
     environment:
@@ -215,12 +269,17 @@ services:
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka:8761/eureka/
       SPRING_KAFKA_CONSUMER_BOOTSTRAP_SERVERS: kafka:9092
       SPRING_KAFKA_PRODUCER_BOOTSTRAP_SERVERS: kafka:9092
+      JWT_SECRET: sheeesh
+      JWT_ACCESS_TOKEN_LIFETIME: 1h
+      JWT_REFRESH_TOKEN_LIFETIME: 1d
   email-service:
     build: ./email-service
     image: email-service
     depends_on:
-      - eureka
-      - kafka
+      eureka:
+        condition: service_started
+      kafka:
+        condition: service_started
     ports:
       - 8089:8089
     environment:

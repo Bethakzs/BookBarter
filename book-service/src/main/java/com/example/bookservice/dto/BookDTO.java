@@ -1,7 +1,6 @@
 package com.example.bookservice.dto;
 
 
-import com.example.bookservice.entity.Genre;
 import lombok.*;
 
 import java.util.List;
