@@ -2,8 +2,7 @@ package com.example.bookservice.controller;
 
 
 import com.example.bookservice.JwtTokenProvider;
-import com.example.bookservice.entity.Genre;
-import com.example.bookservice.service.BookService;
+import com.example.bookservice.service.BookServiceImpl;
 import com.example.bookservice.dto.BookDTO;
 import com.example.bookservice.dto.BookUserDTO;
 import com.example.bookservice.entity.Book;
@@ -15,7 +14,6 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.security.Principal;
 import java.util.List;
 
 @RestController
@@ -23,7 +21,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class BookController {
 
-    private final BookService bookService;
+    private final BookServiceImpl bookService;
     private final JwtTokenProvider jwtTokenProvider;
 
     @PostMapping("/publish")

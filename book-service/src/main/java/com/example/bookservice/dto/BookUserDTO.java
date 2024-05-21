@@ -1,7 +1,6 @@
 package com.example.bookservice.dto;
 
 
-import com.example.bookservice.entity.Genre;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

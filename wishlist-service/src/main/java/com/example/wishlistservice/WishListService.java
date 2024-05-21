@@ -114,7 +114,7 @@ public class WishListService {
                     .id(book.getId())
                     .title(book.getTitle())
                     .image(book.getImage())
-                    .genres(remakeGenres(book.getGenres()))
+                    .genres(book.getGenres())
                     .description(book.getDescription())
                     .author(book.getAuthor())
                     .year(book.getYear())
@@ -124,31 +124,6 @@ public class WishListService {
                     .build());
         }
         return booksWithUsers;
-    }
-
-    private List<String> remakeGenres(List<Genre> genres) {
-        if (genres != null) {
-            return genres.stream()
-                    .map(this::translateGenre)
-                    .collect(Collectors.toList());
-        }
-        return null;
-    }
-
-    private String translateGenre(Genre genre) {
-        return switch (genre) {
-            case NOVEL -> "Роман";
-            case POETRY -> "Поезія";
-            case FANTASY -> "Фантастика";
-            case FICTION -> "Художня література";
-            case DETECTIVE -> "Детектив";
-            case BIOGRAPHY -> "Біографія";
-            case HISTORICAL -> "Історичний";
-            case SCIENTIFIC -> "Науковий";
-            case SCI_FI -> "Наукова фантастика";
-            case CHILDREN -> "Дитячий";
-            default -> "Невідомий жанр";
-        };
     }
 
     public void clearWishList(String email) {

@@ -1,8 +1,7 @@
 package com.example.bookservice.kafka;
 
-import com.example.bookservice.dto.BookUserDTO;
 import com.example.bookservice.entity.Book;
-import com.example.bookservice.service.BookService;
+import com.example.bookservice.service.BookServiceImpl;
 import com.example.bookservice.entity.BookStatus;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -25,7 +24,7 @@ import java.util.Optional;
 public class KafkaConsumer {
 
     private final KafkaTemplate<String, String> kafkaTemplate;
-    private final BookService bookService;
+    private final BookServiceImpl bookService;
 
     @KafkaListener(topics = "book-service-request-check-exist-book-topic", groupId = "book-service")
     public void processRequestCheck(ConsumerRecord<String, String> request) {

@@ -1,5 +1,6 @@
 package com.example.bookservice.entity;
 
+import com.example.bookservice.entity.genres.GenreInterface;
 import com.fasterxml.jackson.annotation.JsonIdentityInfo;
 import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 import jakarta.persistence.*;
@@ -29,13 +30,13 @@ public class Book {
 
     @Lob
     @Column(name = "image")
-    private byte[] image;
+    byte[] image;
 
-    @ElementCollection(targetClass = Genre.class)
+    @ElementCollection(targetClass = String.class)
     @Enumerated(EnumType.STRING)
     @CollectionTable(name = "book_genre")
     @Column(name = "genre", length = 50)
-    private List<Genre> genres;
+    List<String> genres;
 
     @Column(name = "description", nullable = false, length = 500)
     String description;
