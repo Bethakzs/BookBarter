@@ -35,7 +35,7 @@ public class ApiGatewayServiceApplication {
 //				.build();
 //	}
 
-	  For docker-compose
+//	  For docker-compose
 	@Bean
 	public RouteLocator customRouteLocator(RouteLocatorBuilder builder) {
 		return builder.routes()
