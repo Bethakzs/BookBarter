@@ -272,17 +272,17 @@ services:
 #      JWT_SECRET: sheeesh
 #      JWT_ACCESS_TOKEN_LIFETIME: 1h
 #      JWT_REFRESH_TOKEN_LIFETIME: 1d
-#  email-service:
-#    build: ./email-service
-#    image: email-service
-#    depends_on:
-#      eureka:
-#        condition: service_started
-#      kafka:
-#        condition: service_started
-#    ports:
-#      - 8089:8089
-#    environment:
-#      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka:8761/eureka/
-#      SPRING_KAFKA_CONSUMER_BOOTSTRAP_SERVERS: kafka:9092
-#      SPRING_KAFKA_PRODUCER_BOOTSTRAP_SERVERS: kafka:9092
+  email-service:
+    build: ./email-service
+    image: email-service
+    depends_on:
+      eureka:
+        condition: service_started
+      kafka:
+        condition: service_started
+    ports:
+      - 8089:8089
+    environment:
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka:8761/eureka/
+      SPRING_KAFKA_CONSUMER_BOOTSTRAP_SERVERS: kafka:9092
+      SPRING_KAFKA_PRODUCER_BOOTSTRAP_SERVERS: kafka:9092
