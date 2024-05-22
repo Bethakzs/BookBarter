@@ -136,40 +136,40 @@ services:
       JWT_SECRET: sheeesh
       JWT_ACCESS_TOKEN_LIFETIME: 1h
       JWT_REFRESH_TOKEN_LIFETIME: 1d
-  wishlist-db:
-    image: postgres
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: 12345
-      POSTGRES_DB: wishlist
-    healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
-      interval: 5s
-      timeout: 5s
-      retries: 3
-  wishlist-service:
-    build: ./wishlist-service
-    image: wishlist-service
-    depends_on:
-      wishlist-db:
-        condition: service_healthy
-      eureka:
-        condition: service_started
-      kafka:
-        condition: service_started
-    ports:
-      - 8084:8084
-    environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://wishlist-db:5432/wishlist
-      SPRING_DATASOURCE_USERNAME: postgres
-      SPRING_DATASOURCE_PASSWORD: 12345
-      SPRING_DATASOURCE_DRIVER_CLASS_NAME: org.postgresql.Driver
-      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka:8761/eureka/
-      SPRING_KAFKA_CONSUMER_BOOTSTRAP_SERVERS: kafka:9092
-      SPRING_KAFKA_PRODUCER_BOOTSTRAP_SERVERS: kafka:9092
-      JWT_SECRET: sheeesh
-      JWT_ACCESS_TOKEN_LIFETIME: 1h
-      JWT_REFRESH_TOKEN_LIFETIME: 1d
+#  wishlist-db:
+#    image: postgres
+#    environment:
+#      POSTGRES_USER: postgres
+#      POSTGRES_PASSWORD: 12345
+#      POSTGRES_DB: wishlist
+#    healthcheck:
+#      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+#      interval: 5s
+#      timeout: 5s
+#      retries: 3
+#  wishlist-service:
+#    build: ./wishlist-service
+#    image: wishlist-service
+#    depends_on:
+#      wishlist-db:
+#        condition: service_healthy
+#      eureka:
+#        condition: service_started
+#      kafka:
+#        condition: service_started
+#    ports:
+#      - 8084:8084
+#    environment:
+#      SPRING_DATASOURCE_URL: jdbc:postgresql://wishlist-db:5432/wishlist
+#      SPRING_DATASOURCE_USERNAME: postgres
+#      SPRING_DATASOURCE_PASSWORD: 12345
+#      SPRING_DATASOURCE_DRIVER_CLASS_NAME: org.postgresql.Driver
+#      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka:8761/eureka/
+#      SPRING_KAFKA_CONSUMER_BOOTSTRAP_SERVERS: kafka:9092
+#      SPRING_KAFKA_PRODUCER_BOOTSTRAP_SERVERS: kafka:9092
+#      JWT_SECRET: sheeesh
+#      JWT_ACCESS_TOKEN_LIFETIME: 1h
+#      JWT_REFRESH_TOKEN_LIFETIME: 1d
   purchase-db:
     image: postgres
     environment:
@@ -238,51 +238,51 @@ services:
       JWT_SECRET: sheeesh
       JWT_ACCESS_TOKEN_LIFETIME: 1h
       JWT_REFRESH_TOKEN_LIFETIME: 1d
-  review-db:
-    image: postgres
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: 12345
-      POSTGRES_DB: review
-    healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
-      interval: 5s
-      timeout: 5s
-      retries: 3
-  review-service:
-    build: ./review-service
-    image: review-service
-    depends_on:
-      review-db:
-        condition: service_healthy
-      eureka:
-        condition: service_started
-      kafka:
-        condition: service_started
-    ports:
-      - 8086:8086
-    environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://review-db:5432/review
-      SPRING_DATASOURCE_USERNAME: postgres
-      SPRING_DATASOURCE_PASSWORD: 12345
-      SPRING_DATASOURCE_DRIVER_CLASS_NAME: org.postgresql.Driver
-      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka:8761/eureka/
-      SPRING_KAFKA_CONSUMER_BOOTSTRAP_SERVERS: kafka:9092
-      SPRING_KAFKA_PRODUCER_BOOTSTRAP_SERVERS: kafka:9092
-      JWT_SECRET: sheeesh
-      JWT_ACCESS_TOKEN_LIFETIME: 1h
-      JWT_REFRESH_TOKEN_LIFETIME: 1d
-  email-service:
-    build: ./email-service
-    image: email-service
-    depends_on:
-      eureka:
-        condition: service_started
-      kafka:
-        condition: service_started
-    ports:
-      - 8089:8089
-    environment:
-      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka:8761/eureka/
-      SPRING_KAFKA_CONSUMER_BOOTSTRAP_SERVERS: kafka:9092
-      SPRING_KAFKA_PRODUCER_BOOTSTRAP_SERVERS: kafka:9092
+#  review-db:
+#    image: postgres
+#    environment:
+#      POSTGRES_USER: postgres
+#      POSTGRES_PASSWORD: 12345
+#      POSTGRES_DB: review
+#    healthcheck:
+#      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+#      interval: 5s
+#      timeout: 5s
+#      retries: 3
+#  review-service:
+#    build: ./review-service
+#    image: review-service
+#    depends_on:
+#      review-db:
+#        condition: service_healthy
+#      eureka:
+#        condition: service_started
+#      kafka:
+#        condition: service_started
+#    ports:
+#      - 8086:8086
+#    environment:
+#      SPRING_DATASOURCE_URL: jdbc:postgresql://review-db:5432/review
+#      SPRING_DATASOURCE_USERNAME: postgres
+#      SPRING_DATASOURCE_PASSWORD: 12345
+#      SPRING_DATASOURCE_DRIVER_CLASS_NAME: org.postgresql.Driver
+#      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka:8761/eureka/
+#      SPRING_KAFKA_CONSUMER_BOOTSTRAP_SERVERS: kafka:9092
+#      SPRING_KAFKA_PRODUCER_BOOTSTRAP_SERVERS: kafka:9092
+#      JWT_SECRET: sheeesh
+#      JWT_ACCESS_TOKEN_LIFETIME: 1h
+#      JWT_REFRESH_TOKEN_LIFETIME: 1d
+#  email-service:
+#    build: ./email-service
+#    image: email-service
+#    depends_on:
+#      eureka:
+#        condition: service_started
+#      kafka:
+#        condition: service_started
+#    ports:
+#      - 8089:8089
+#    environment:
+#      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka:8761/eureka/
+#      SPRING_KAFKA_CONSUMER_BOOTSTRAP_SERVERS: kafka:9092
+#      SPRING_KAFKA_PRODUCER_BOOTSTRAP_SERVERS: kafka:9092

@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="DataSourceManagerImpl" format="xml" multifile-model="true">
-    <data-source source="LOCAL" name="notification@localhost" uuid="f3dee284-fbce-4159-95aa-20de9a614100">
+    <data-source source="LOCAL" name="user@localhost" uuid="35f89412-c394-4761-ba84-7288e376bac1">
       <driver-ref>postgresql</driver-ref>
       <synchronize>true</synchronize>
       <jdbc-driver>org.postgresql.Driver</jdbc-driver>
-      <jdbc-url>jdbc:postgresql://localhost:5432/notification</jdbc-url>
+      <jdbc-url>jdbc:postgresql://localhost:5432/user</jdbc-url>
       <jdbc-additional-properties>
         <property name="com.intellij.clouds.kubernetes.db.host.port" />
         <property name="com.intellij.clouds.kubernetes.db.enabled" value="false" />
@@ -13,11 +13,11 @@
       </jdbc-additional-properties>
       <working-dir>$ProjectFileDir$</working-dir>
     </data-source>
-    <data-source source="LOCAL" name="user@localhost" uuid="35f89412-c394-4761-ba84-7288e376bac1">
+    <data-source source="LOCAL" name="book@localhost [2]" uuid="1dd41c00-ebf1-4a15-967e-20e178365cb9">
       <driver-ref>postgresql</driver-ref>
       <synchronize>true</synchronize>
       <jdbc-driver>org.postgresql.Driver</jdbc-driver>
-      <jdbc-url>jdbc:postgresql://localhost:5432/user</jdbc-url>
+      <jdbc-url>jdbc:postgresql://localhost:5432/book</jdbc-url>
       <jdbc-additional-properties>
         <property name="com.intellij.clouds.kubernetes.db.host.port" />
         <property name="com.intellij.clouds.kubernetes.db.enabled" value="false" />

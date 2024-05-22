@@ -29,7 +29,6 @@ import java.util.stream.Collectors;
 public class UserService {
 
     private final UserDAO userRepository;
-    private final PasswordEncoder passwordEncoder;
     private final KafkaTemplate<String, String> kafkaTemplate;
     private final ReplyProcessor replyProcessor;
 
