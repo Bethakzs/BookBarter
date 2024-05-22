@@ -15,46 +15,46 @@ import org.springframework.web.bind.annotation.CrossOrigin;
 @EnableDiscoveryClient
 public class ApiGatewayServiceApplication {
 	//  For local VPN
-	@Bean
-	public RouteLocator customRouteLocator(RouteLocatorBuilder builder) {
-		return builder.routes()
-				.route("user-service", r -> r.path("/api/user/**")
-						.uri("http://localhost:8082"))
-				.route("book-service", r -> r.path("/api/book/**")
-						.uri("http://localhost:8083"))
-				.route("wishlist-service", r -> r.path("/api/wishlist/**")
-						.uri("http://localhost:8084"))
-				.route("purchase-service", r -> r.path("/api/purchase/**")
-						.uri("http://localhost:8085"))
-				.route("review-service", r -> r.path("/api/review/**")
-						.uri("http://localhost:8086"))
-				.route("auth-service", r -> r.path("/auth/**")
-						.uri("http://localhost:8087"))
-				.route("notification-service", r -> r.path("/api/notifications/**")
-						.uri("http://localhost:8088"))
-				.build();
-	}
-
-//	  For docker-compose
 //	@Bean
 //	public RouteLocator customRouteLocator(RouteLocatorBuilder builder) {
 //		return builder.routes()
 //				.route("user-service", r -> r.path("/api/user/**")
-//						.uri("http://user-service:8082"))
+//						.uri("http://localhost:8082"))
 //				.route("book-service", r -> r.path("/api/book/**")
-//						.uri("http://book-service:8083"))
+//						.uri("http://localhost:8083"))
 //				.route("wishlist-service", r -> r.path("/api/wishlist/**")
-//						.uri("http://wishlist-service:8084"))
+//						.uri("http://localhost:8084"))
 //				.route("purchase-service", r -> r.path("/api/purchase/**")
-//						.uri("http://purchase-service:8085"))
+//						.uri("http://localhost:8085"))
 //				.route("review-service", r -> r.path("/api/review/**")
-//						.uri("http://review-service:8086"))
+//						.uri("http://localhost:8086"))
 //				.route("auth-service", r -> r.path("/auth/**")
-//						.uri("http://auth-service:8087"))
+//						.uri("http://localhost:8087"))
 //				.route("notification-service", r -> r.path("/api/notifications/**")
-//						.uri("http://notification-service:8088"))
+//						.uri("http://localhost:8088"))
 //				.build();
 //	}
+
+//	  For docker-compose
+	@Bean
+	public RouteLocator customRouteLocator(RouteLocatorBuilder builder) {
+		return builder.routes()
+				.route("user-service", r -> r.path("/api/user/**")
+						.uri("http://user-service:8082"))
+				.route("book-service", r -> r.path("/api/book/**")
+						.uri("http://book-service:8083"))
+				.route("wishlist-service", r -> r.path("/api/wishlist/**")
+						.uri("http://wishlist-service:8084"))
+				.route("purchase-service", r -> r.path("/api/purchase/**")
+						.uri("http://purchase-service:8085"))
+				.route("review-service", r -> r.path("/api/review/**")
+						.uri("http://review-service:8086"))
+				.route("auth-service", r -> r.path("/auth/**")
+						.uri("http://auth-service:8087"))
+				.route("notification-service", r -> r.path("/api/notifications/**")
+						.uri("http://notification-service:8088"))
+				.build();
+	}
 	public static void main(String[] args) {
 		SpringApplication.run(ApiGatewayServiceApplication.class, args);
 	}
