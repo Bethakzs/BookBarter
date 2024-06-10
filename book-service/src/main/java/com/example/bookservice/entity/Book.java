@@ -14,7 +14,6 @@ import java.util.List;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@FieldDefaults(level = AccessLevel.PRIVATE)
 @Table(name = "books")
 @Builder
 @JsonIdentityInfo(generator = ObjectIdGenerators.PropertyGenerator.class, property = "id")
@@ -23,40 +22,40 @@ public class Book {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id", nullable = false)
-    Long id;
+    private Long id;
 
     @Column(name = "title", nullable = false)
-    String title;
+    private String title;
 
     @Lob
     @Column(name = "image")
-    byte[] image;
+    private byte[] image;
 
     @ElementCollection(targetClass = String.class)
     @Enumerated(EnumType.STRING)
     @CollectionTable(name = "book_genre")
     @Column(name = "genre", length = 50)
-    List<String> genres;
+    private List<String> genres;
 
     @Column(name = "description", nullable = false, length = 500)
-    String description;
+    private String description;
 
     @Column(name = "author", nullable = false, length = 100)
-    String author;
+    private String author;
 
     @Column(name = "year", nullable = false)
-    int year;
+    private int year;
 
     @Column(name = "published_by", nullable = false, length = 150)
-    String publishedBy;
+    private String publishedBy;
 
     @Column(name = "price", nullable = false)
-    int price;
+    private int price;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false, length = 30)
-    BookStatus status;
+    private BookStatus status;
 
     @Column(name = "user_email")
-    String userEmail;
+    private String userEmail;
 }

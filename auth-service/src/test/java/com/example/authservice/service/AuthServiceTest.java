@@ -1,8 +1,6 @@
 package com.example.authservice.service;
 
-import com.example.authservice.dto.JwtRequest;
-import com.example.authservice.dto.UserRegistration;
-import com.example.authservice.entity.User;
+import com.example.authservice.dto.request.JwtRequest;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -11,8 +9,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
-
-import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;

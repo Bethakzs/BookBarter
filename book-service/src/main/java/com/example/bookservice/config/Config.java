@@ -25,12 +25,6 @@ public class Config {
         return new BCryptPasswordEncoder();
     }
 
-//    @Bean
-//    @Scope(value = ConfigurableBeanFactory.SCOPE_SINGLETON)
-//    public GenreTranslator getGenreTranslator() {
-//        return new GenreTranslator();
-//    }
-
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http

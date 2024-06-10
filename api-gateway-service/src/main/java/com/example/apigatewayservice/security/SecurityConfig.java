@@ -26,8 +26,12 @@ import java.util.List;
 @EnableWebFluxSecurity
 public class SecurityConfig {
 
+    private final JwtTokenFilter jwtTokenFilter;
+
     @Autowired
-    private JwtTokenFilter jwtTokenFilter;
+    public SecurityConfig(JwtTokenFilter jwtTokenFilter) {
+        this.jwtTokenFilter = jwtTokenFilter;
+    }
 
     @Bean
     public SecurityWebFilterChain filterChain(ServerHttpSecurity http) {

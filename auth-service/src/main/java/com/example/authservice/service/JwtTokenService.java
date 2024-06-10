@@ -1,11 +1,10 @@
 package com.example.authservice.service;
 
 import com.example.authservice.entity.Role;
-import com.example.authservice.dto.JwtResponse;
+import com.example.authservice.dto.response.JwtResponse;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
-import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.GrantedAuthority;

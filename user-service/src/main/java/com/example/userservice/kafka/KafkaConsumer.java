@@ -2,8 +2,8 @@ package com.example.userservice.kafka;
 
 import com.example.userservice.dao.UserDAO;
 import com.example.userservice.entity.User;
-import com.example.userservice.service.UserService;
-import com.example.userservice.dto.UserReviewDTO;
+import com.example.userservice.service.UserServiceImpl;
+import com.example.userservice.dto.response.UserReviewDTO;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.transaction.Transactional;
@@ -19,17 +19,12 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class KafkaConsumer {
 
-    private final UserService userService;
+    private final UserServiceImpl userService;
     private final KafkaTemplate<String, String> kafkaTemplate;
     private final UserDAO userDAO;
 
-    // Review
-    @KafkaListener(topics = "user-service-request-get-user-by-email-topic", groupId = "user-service")
-    @Transactional
-    public void handleGetUserFromReviewService(@Payload String email, @Header(KafkaHeaders.REPLY_TOPIC) String replyTopic) throws Exception {
-        User user = userService.findByEmail(email)
-                .orElseThrow(() -> new Exception("User not found"));
-        UserReviewDTO userReviewDTO = UserReviewDTO.builder()
+    private UserReviewDTO convertToUserReviewDTO(User user) {
+        return UserReviewDTO.builder()
                 .login(user.getLogin())
                 .email(user.getEmail())
                 .pwd(user.getPwd())
@@ -38,8 +33,10 @@ public class KafkaConsumer {
                 .image(user.getImage())
                 .bucks(user.getBucks())
                 .build();
+    }
+
+    private void sendUser(String replyTopic, UserReviewDTO userReviewDTO) {
         ObjectMapper mapper = new ObjectMapper();
-        System.out.println("Sending user: " + replyTopic);
         try {
             String userJson = mapper.writeValueAsString(userReviewDTO);
             kafkaTemplate.send(replyTopic, userJson);
@@ -48,18 +45,21 @@ public class KafkaConsumer {
         }
     }
 
+    // Review
+    @KafkaListener(topics = "user-service-request-get-user-by-email-topic", groupId = "user-service")
+    @Transactional
+    public void handleGetUserFromReviewService(@Payload String email, @Header(KafkaHeaders.REPLY_TOPIC) String replyTopic) throws Exception {
+        User user = userService.findByEmail(email);
+        UserReviewDTO userReviewDTO = convertToUserReviewDTO(user);
+        sendUser(replyTopic, userReviewDTO);
+    }
+
     @KafkaListener(topics = "user-service-request-get-user-by-email-without-exist-topic", groupId = "auth-service")
     @Transactional
     public void handleGetUserFromAuthService(@Payload String email, @Header(KafkaHeaders.REPLY_TOPIC) String replyTopic) {
         User user = userService.findByEmailWithOutCheck(email);
-        ObjectMapper mapper = new ObjectMapper();
-        System.out.println("Sending user: " + replyTopic);
-        try {
-            String userJson = mapper.writeValueAsString(user);
-            kafkaTemplate.send(replyTopic, userJson);
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException("Error serializing user", e);
-        }
+        UserReviewDTO userReviewDTO = convertToUserReviewDTO(user);
+        sendUser(replyTopic, userReviewDTO);
     }
 
     @KafkaListener(topics = "user-service-request-send-rating-topic", groupId = "user-service")
@@ -69,8 +69,7 @@ public class KafkaConsumer {
         String email = parts[0];
         double rating = Double.parseDouble(parts[1]);
         int reviewsCount = Integer.parseInt(parts[2]);
-        User user = userService.findByEmailForCheck(email)
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+        User user = userService.findByEmailForCheck(email);
         double newRating;
         if(reviewsCount == 0) {
             newRating = (user.getRating() + rating) / 2.;
@@ -87,8 +86,7 @@ public class KafkaConsumer {
         String[] parts = request.split(":");
         String email = parts[0];
         long bucks = Long.parseLong(parts[1]);
-        User user = userService.findByEmailForCheck(email)
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+        User user = userService.findByEmailForCheck(email);
         user.setBucks(bucks);
         userService.updateUser(user);
     }
@@ -102,16 +100,14 @@ public class KafkaConsumer {
     //Notification
     @KafkaListener(topics = "user-service-request-change-notification-true", groupId = "user-service")
     public void handleChangeUserNotificationTrue(String request) {
-        User user = userService.findByEmailForCheck(request)
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+        User user = userService.findByEmailForCheck(request);
         user.setNotifications(true);
         userDAO.save(user);
     }
     //Notification
     @KafkaListener(topics = "user-service-request-change-notification-false", groupId = "user-service")
     public void handleChangeUserNotificationFalse(String request) {
-        User user = userService.findByEmailForCheck(request)
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+        User user = userService.findByEmailForCheck(request);
         user.setNotifications(false);
         userDAO.save(user);
     }

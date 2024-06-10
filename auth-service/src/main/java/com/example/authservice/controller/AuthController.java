@@ -1,12 +1,12 @@
 package com.example.authservice.controller;
 
-import com.example.authservice.dto.JwtRequest;
-import com.example.authservice.dto.JwtResponse;
+import com.example.authservice.dto.request.JwtRequest;
+import com.example.authservice.dto.response.JwtResponse;
 import com.example.authservice.entity.User;
 import com.example.authservice.exception.AppError;
 import com.example.authservice.service.AuthService;
 import com.example.authservice.entity.Role;
-import com.example.authservice.dto.UserRegistration;
+import com.example.authservice.dto.request.UserRegistration;
 import com.example.authservice.service.JwtTokenService;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.transaction.Transactional;
@@ -31,7 +31,7 @@ public class AuthController {
 
     @PostMapping("/login")
     public ResponseEntity<?> createAuthToken(@RequestBody JwtRequest authRequest, HttpServletResponse response) {
-        return createResponseEntity(authService.execute(authRequest), response);
+        return createResponseEntity(authService.createAuthToken(authRequest), response);
     }
 
     @PostMapping("/registration")

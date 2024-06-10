@@ -1,7 +1,7 @@
 package com.example.bookservice.service;
 
-import com.example.bookservice.dto.BookDTO;
-import com.example.bookservice.dto.BookUserDTO;
+import com.example.bookservice.dto.request.BookDTO;
+import com.example.bookservice.dto.response.BookUserDTO;
 import com.example.bookservice.entity.Book;
 import org.springframework.web.multipart.MultipartFile;
 

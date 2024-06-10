@@ -1,10 +1,10 @@
 package com.example.bookservice.controller;
 
 
-import com.example.bookservice.JwtTokenProvider;
+import com.example.bookservice.util.JwtTokenProvider;
 import com.example.bookservice.service.BookServiceImpl;
-import com.example.bookservice.dto.BookDTO;
-import com.example.bookservice.dto.BookUserDTO;
+import com.example.bookservice.dto.request.BookDTO;
+import com.example.bookservice.dto.response.BookUserDTO;
 import com.example.bookservice.entity.Book;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.transaction.Transactional;

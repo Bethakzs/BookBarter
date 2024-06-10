@@ -1,7 +1,6 @@
 package com.example.userservice.dto.request;
 
-import com.example.userservice.dto.BookStatus;
-import com.example.userservice.dto.Genre;
+import com.example.userservice.dto.book.BookStatus;
 import lombok.Data;
 
 import java.util.List;

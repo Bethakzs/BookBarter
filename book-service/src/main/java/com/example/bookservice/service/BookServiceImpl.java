@@ -1,9 +1,9 @@
 package com.example.bookservice.service;
 
 import com.example.bookservice.dao.BookDAO;
-import com.example.bookservice.dto.BookDTO;
-import com.example.bookservice.dto.BookUserDTO;
-import com.example.bookservice.dto.UserDTO;
+import com.example.bookservice.dto.request.BookDTO;
+import com.example.bookservice.dto.response.BookUserDTO;
+import com.example.bookservice.dto.user.UserDTO;
 import com.example.bookservice.entity.Book;
 import com.example.bookservice.entity.BookStatus;
 import com.example.bookservice.entity.GenreFactory;

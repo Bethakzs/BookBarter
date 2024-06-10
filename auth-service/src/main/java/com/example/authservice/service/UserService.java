@@ -1,10 +1,10 @@
 package com.example.authservice.service;
 
-import com.example.authservice.dto.JwtRequest;
+import com.example.authservice.dto.request.JwtRequest;
 import com.example.authservice.entity.Role;
 import com.example.authservice.entity.User;
 import com.example.authservice.dao.UserRepository;
-import com.example.authservice.dto.UserRegistration;
+import com.example.authservice.dto.request.UserRegistration;
 import com.example.authservice.kafka.ReplyProcessor;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -31,16 +31,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
-public class UserService implements UserDetailsService, UserServiceStrategy {
-
-    @Override
-    public ResponseEntity<?> execute(JwtRequest request) {
-        if (request.getEmail() != null && request.getPwd() != null) {
-            return new ResponseEntity<>(loadUserByUsername(request.getEmail()), HttpStatus.OK);
-        } else {
-            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
-        }
-    }
+public class UserService implements UserDetailsService {
 
     private final UserRepository userRepository;
     private final @Lazy PasswordEncoder passwordEncoder;

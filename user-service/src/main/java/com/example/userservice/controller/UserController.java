@@ -1,21 +1,18 @@
 package com.example.userservice.controller;
 
-import com.example.userservice.service.JwtTokenProvider;
-import com.example.userservice.service.UserService;
+import com.example.userservice.util.JwtTokenProvider;
+import com.example.userservice.service.UserServiceImpl;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
-
-import java.security.Principal;
 
 @RestController
 @RequestMapping("/api/user")
 @RequiredArgsConstructor
 public class UserController {
 
-    private final UserService userService;
+    private final UserServiceImpl userService;
     private final JwtTokenProvider jwtTokenProvider;
 
     @GetMapping("/get")
@@ -28,9 +25,7 @@ public class UserController {
 
     @DeleteMapping("/delete/{email}")
     public ResponseEntity<?> deleteUser(@PathVariable String email) throws Exception {
-        if(userService.findByEmail(email).isEmpty()) {
-            return ResponseEntity.badRequest().body("User not found");
-        }
+        userService.findByEmail(email);
         userService.deleteUser(email);
         return ResponseEntity.ok("User deleted");
     }
