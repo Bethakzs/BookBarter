@@ -16,6 +16,8 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
 
@@ -29,19 +31,51 @@ public class AuthService {
 
     @Transactional
     public ResponseEntity<?> createAuthToken(JwtRequest authRequest) {
+        System.out.println("Processing auth request: " + authRequest);
         try {
             authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(authRequest.getEmail(), authRequest.getPwd()));
+            System.out.println("Authentication successful for: " + authRequest.getEmail());
+            
+            Optional<User> userOpt = userService.findByEmailForCheck(authRequest.getEmail());
+            if (!userOpt.isPresent()) {
+                System.out.println("User not found for email: " + authRequest.getEmail());
+                return new ResponseEntity<>(new AppError(HttpStatus.NOT_FOUND.value(), "User not found"), HttpStatus.NOT_FOUND);
+            }
+            
+            User user = userOpt.get();
+            UserDetails userDetails = userService.loadUserByUsername(user.getEmail());
+            String accessToken = jwtTokenService.generateToken(userDetails);
+            String refreshToken = jwtTokenService.generateRefreshToken(userDetails);
+            System.out.println("Tokens generated for user: " + user.getEmail());
+            
+            user.setRefreshToken(refreshToken);
+            try {
+                userService.updateUser(user);
+            } catch (Exception e) {
+                System.out.println("Error updating user refresh token: " + e.getMessage());
+            }
+            
+            Set<Role> roles = user.getRoles();
+            if (roles == null || roles.isEmpty()) {
+                System.out.println("User has no roles, adding default ROLE_USER");
+                roles = new HashSet<>(Collections.singleton(Role.ROLE_USER));
+                user.setRoles(roles);
+                try {
+                    userService.updateUser(user);
+                } catch (Exception e) {
+                    System.out.println("Error updating user roles: " + e.getMessage());
+                }
+            }
+            
+            return ResponseEntity.ok().body(new JwtResponse(accessToken, refreshToken, roles));
         } catch (BadCredentialsException e) {
+            System.out.println("Bad credentials for: " + authRequest.getEmail());
             return new ResponseEntity<>(new AppError(HttpStatus.UNAUTHORIZED.value(), "Incorrect email or password"), HttpStatus.UNAUTHORIZED);
+        } catch (Exception e) {
+            System.out.println("Error during authentication: " + e.getMessage());
+            e.printStackTrace();
+            return new ResponseEntity<>(new AppError(HttpStatus.INTERNAL_SERVER_ERROR.value(), "Authentication error: " + e.getMessage()), HttpStatus.INTERNAL_SERVER_ERROR);
         }
-        User user = userService.findByEmailForCheck(authRequest.getEmail()).get();
-        UserDetails userDetails = userService.loadUserByUsername(user.getEmail());
-        String accessToken = jwtTokenService.generateToken(userDetails);
-        String refreshToken = jwtTokenService.generateRefreshToken(userDetails);
-        user.setRefreshToken(refreshToken);
-        userService.updateUser(user);
-        Set<Role> roles = user.getRoles();
-        return ResponseEntity.ok().body(new JwtResponse(accessToken, refreshToken, roles));
     }
 
     @Transactional

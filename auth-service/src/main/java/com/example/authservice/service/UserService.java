@@ -57,9 +57,39 @@ public class UserService implements UserDetailsService {
         if(user == null) {
             throw new UsernameNotFoundException("User not found");
         }
-        List<GrantedAuthority> authorities = user.getRoles().stream()
-                .map(role -> new SimpleGrantedAuthority(role.name()))
-                .collect(Collectors.toList());
+        
+        Set<Role> roles = user.getRoles();
+        List<GrantedAuthority> authorities;
+        
+        if (roles != null) {
+            authorities = roles.stream()
+                    .map(role -> new SimpleGrantedAuthority(role.name()))
+                    .collect(Collectors.toList());
+        } else {
+            System.out.println("User has null roles, setting default ROLE_USER");
+            authorities = Collections.singletonList(new SimpleGrantedAuthority(Role.ROLE_USER.name()));
+            
+            Optional<User> existingUser = userRepository.findByLogin(user.getLogin());
+            if (existingUser.isPresent()) {
+                User dbUser = existingUser.get();
+                
+                if (dbUser.getRoles() == null) {
+                    dbUser.setRoles(new HashSet<>(Collections.singleton(Role.ROLE_USER)));
+                    userRepository.save(dbUser);
+                }
+                
+                return new org.springframework.security.core.userdetails.User(
+                    dbUser.getEmail(), 
+                    dbUser.getPwd(), 
+                    dbUser.getRoles().stream()
+                        .map(role -> new SimpleGrantedAuthority(role.name()))
+                        .collect(Collectors.toList())
+                );
+            } else {
+                user.setRoles(new HashSet<>(Collections.singleton(Role.ROLE_USER)));
+            }
+        }
+        
         return new org.springframework.security.core.userdetails.User(user.getEmail(), user.getPwd(), authorities);
     }
 

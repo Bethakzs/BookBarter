@@ -1,7 +1,6 @@
 package com.example.wishlistservice.service;
 
 import com.example.wishlistservice.dao.WishListRepository;
-import com.example.wishlistservice.dto.*;
 import com.example.wishlistservice.dto.book.BookDTO;
 import com.example.wishlistservice.dto.user.BookUserDTO;
 import com.example.wishlistservice.dto.user.UserDTO;
@@ -11,8 +10,6 @@ import com.example.wishlistservice.kafka.ReplyProcessor;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.support.KafkaHeaders;
 import org.springframework.messaging.support.MessageBuilder;
