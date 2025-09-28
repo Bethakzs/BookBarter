@@ -28,6 +28,16 @@ services:
       KAFKA_REPLICA_FETCH_MAX_BYTES: 20971520 # 20 MB
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'true'
+  web:
+    build:
+      context: ./bookbarter-front
+      dockerfile: Dockerfile
+    image: bookbarter:latest
+    ports:
+      - "4173:4173"
+    environment:
+      - NODE_ENV=development
+    restart: unless-stopped
   user-db:
     image: postgres
     environment:
@@ -136,40 +146,20 @@ services:
       JWT_SECRET: sheeesh
       JWT_ACCESS_TOKEN_LIFETIME: 1h
       JWT_REFRESH_TOKEN_LIFETIME: 1d
-  wishlist-db:
-    image: postgres
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: 12345
-      POSTGRES_DB: wishlist
-    healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
-      interval: 5s
-      timeout: 5s
-      retries: 3
-  wishlist-service:
-    build: ./wishlist-service
-    image: wishlist-service
+  book-seed:
+    image: postgres:16
     depends_on:
-      wishlist-db:
+      book-db:
         condition: service_healthy
-      eureka:
+      book-service:
         condition: service_started
-      kafka:
-        condition: service_started
-    ports:
-      - 8084:8084
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://wishlist-db:5432/wishlist
-      SPRING_DATASOURCE_USERNAME: postgres
-      SPRING_DATASOURCE_PASSWORD: 12345
-      SPRING_DATASOURCE_DRIVER_CLASS_NAME: org.postgresql.Driver
-      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka:8761/eureka/
-      SPRING_KAFKA_CONSUMER_BOOTSTRAP_SERVERS: kafka:9092
-      SPRING_KAFKA_PRODUCER_BOOTSTRAP_SERVERS: kafka:9092
-      JWT_SECRET: sheeesh
-      JWT_ACCESS_TOKEN_LIFETIME: 1h
-      JWT_REFRESH_TOKEN_LIFETIME: 1d
+      PGPASSWORD: 12345
+    volumes:
+      - ./book_data_insert.sql:/seed/book_data_insert.sql:ro
+    entrypoint: /bin/bash
+    command: -c "until pg_isready -h book-db -p 5432 -U postgres -d book; do echo waiting for db; sleep 2; done; until psql -h book-db -U postgres -d book -tAc \"SELECT 1 FROM information_schema.tables WHERE table_schema='public' AND table_name='books'\" | grep -q 1; do echo waiting for schema; sleep 2; done; psql -h book-db -U postgres -d book -f /seed/book_data_insert.sql"
+    restart: "no"
   purchase-db:
     image: postgres
     environment:

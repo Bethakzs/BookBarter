@@ -19,7 +19,7 @@ INSERT INTO book_genre (book_id, genre)
 VALUES (1, 'Fantasy'),
        (2, 'Fiction'),
        (3, 'Children'),
-       (4, 'Dystopian'),
+       (4, 'Fiction'),
        (5, 'Fiction'),
        (6, 'Fantasy'),
        (7, 'Historical'),
