@@ -21,8 +21,7 @@ public class Config {
                 .csrf(AbstractHttpConfigurer::disable)
                 .cors(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(authorizeRequests ->
-                        authorizeRequests
-                                .requestMatchers("**").permitAll()
+                        authorizeRequests.anyRequest().permitAll()
                 );
         return http.build();
     }

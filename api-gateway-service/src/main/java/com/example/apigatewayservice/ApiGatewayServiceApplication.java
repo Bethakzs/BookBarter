@@ -40,19 +40,19 @@ public class ApiGatewayServiceApplication {
 	public RouteLocator customRouteLocator(RouteLocatorBuilder builder) {
 		return builder.routes()
 				.route("user-service", r -> r.path("/api/user/**")
-						.uri("http://user-service:8082"))
+						.uri("lb://USER-SERVICE"))
 				.route("book-service", r -> r.path("/api/book/**")
-						.uri("http://book-service:8083"))
+						.uri("lb://BOOK-SERVICE"))
 				.route("wishlist-service", r -> r.path("/api/wishlist/**")
-						.uri("http://wishlist-service:8084"))
+						.uri("lb://WISHLIST-SERVICE"))
 				.route("purchase-service", r -> r.path("/api/purchase/**")
-						.uri("http://purchase-service:8085"))
+						.uri("lb://PURCHASE-SERVICE"))
 				.route("review-service", r -> r.path("/api/review/**")
-						.uri("http://review-service:8086"))
+						.uri("lb://REVIEW-SERVICE"))
 				.route("auth-service", r -> r.path("/auth/**")
-						.uri("http://auth-service:8087"))
+						.uri("lb://AUTH-SERVICE"))
 				.route("notification-service", r -> r.path("/api/notifications/**")
-						.uri("http://notification-service:8088"))
+						.uri("lb://NOTIFICATION-SERVICE"))
 				.build();
 	}
 	public static void main(String[] args) {

@@ -1,0 +1,1019 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: bookbarter
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: book-seed-sql
+  namespace: bookbarter
+data:
+  book_data_insert.sql: |
+    TRUNCATE TABLE books CASCADE;
+    ALTER SEQUENCE books_id_seq RESTART WITH 1;
+
+    INSERT INTO books (title, image, description, author, year, published_by, price, status, user_email)
+    VALUES ('The Lord of the Rings', NULL, 'Epic fantasy adventure', 'J.R.R. Tolkien', 1954, 'Allen & Unwin', 10, 'AVAILABLE', 'romanwdwd@gmail.com'),
+           ('Dune', NULL, 'Science fiction masterpiece', 'Frank Herbert', 1965, 'Chilton Books', 9, 'AVAILABLE', 'romanwdwd@gmail.com'),
+           ('The Hobbit', NULL, 'Prequel to LOTR', 'J.R.R. Tolkien', 1937, 'Allen & Unwin', 3, 'AVAILABLE', 'romanwdwd@gmail.com'),
+           ('1984', NULL, 'Dystopian classic', 'George Orwell', 1949, 'Secker & Warburg', 13, 'AVAILABLE', 'romanwdwd@gmail.com'),
+           ('To Kill a Mockingbird', NULL, 'Story of racial injustice', 'Harper Lee', 1960, 'J.B. Lippincott', 10, 'AVAILABLE', 'romanwdwd@gmail.com'),
+           ('The Da Vinci Code', NULL, 'Religious conspiracy thriller', 'Dan Brown', 2003, 'Doubleday', 8, 'AVAILABLE', 'romanwdwd@gmail.com'),
+           ('Pride and Prejudice', NULL, 'Romance and manners', 'Jane Austen', 1813, 'T. Egerton', 9, 'AVAILABLE', 'romanwdwd@gmail.com'),
+           ('The Martian', NULL, 'Survival on Mars', 'Andy Weir', 2011, 'Crown', 2, 'AVAILABLE', 'romanwdwd@gmail.com'),
+           ('The Shining', NULL, 'Haunted hotel horror', 'Stephen King', 1977, 'Doubleday', 20, 'AVAILABLE', 'romanwdwd@gmail.com'),
+           ('Harry Potter and the Philosopher''s Stone', NULL, 'Wizarding world debut', 'J.K. Rowling', 1997, 'Bloomsbury', 30, 'AVAILABLE', 'romanwdwd@gmail.com');
+
+    TRUNCATE TABLE book_genre;
+
+    INSERT INTO book_genre (book_id, genre)
+    VALUES (1, 'Fantasy'),
+           (2, 'Fiction'),
+           (3, 'Children'),
+           (4, 'Fiction'),
+           (5, 'Fiction'),
+           (6, 'Fantasy'),
+           (7, 'Historical'),
+           (8, 'Novel'),
+           (9, 'Fiction'),
+           (10, 'Fantasy');
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: zookeeper
+  namespace: bookbarter
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: zookeeper
+  template:
+    metadata:
+      labels:
+        app: zookeeper
+    spec:
+      containers:
+        - name: zookeeper
+          image: confluentinc/cp-zookeeper:7.4.4
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: ZOOKEEPER_CLIENT_PORT
+              value: "2181"
+            - name: ZOOKEEPER_TICK_TIME
+              value: "2000"
+          ports:
+            - containerPort: 2181
+              name: client
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: zookeeper
+  namespace: bookbarter
+spec:
+  selector:
+    app: zookeeper
+  ports:
+    - name: client
+      port: 2181
+      targetPort: 2181
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kafka
+  namespace: bookbarter
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kafka
+  template:
+    metadata:
+      labels:
+        app: kafka
+    spec:
+      containers:
+        - name: kafka
+          image: confluentinc/cp-kafka:5.5.1
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 9092
+          env:
+            - name: KAFKA_BROKER_ID
+              value: "1"
+            - name: KAFKA_ZOOKEEPER_CONNECT
+              value: "zookeeper:2181"
+            - name: KAFKA_LISTENERS
+              value: "PLAINTEXT://0.0.0.0:9092"
+            - name: KAFKA_ADVERTISED_LISTENERS
+              value: "PLAINTEXT://kafka:9092"
+            - name: KAFKA_LISTENER_SECURITY_PROTOCOL_MAP
+              value: "PLAINTEXT:PLAINTEXT"
+            - name: KAFKA_INTER_BROKER_LISTENER_NAME
+              value: "PLAINTEXT"
+            - name: KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR
+              value: "1"
+            - name: KAFKA_AUTO_CREATE_TOPICS_ENABLE
+              value: "true"
+            - name: KAFKA_MESSAGE_MAX_BYTES
+              value: "20971520"
+            - name: KAFKA_HEAP_OPTS
+              value: "-Xmx512M -Xms512M"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kafka
+  namespace: bookbarter
+spec:
+  clusterIP: None
+  selector:
+    app: kafka
+  ports:
+    - name: broker
+      port: 9092
+      targetPort: 9092
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: user-db
+  namespace: bookbarter
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: user-db
+  template:
+    metadata:
+      labels:
+        app: user-db
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:16
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: POSTGRES_USER
+              value: postgres
+            - name: POSTGRES_PASSWORD
+              value: "12345"
+            - name: POSTGRES_DB
+              value: user
+          ports:
+            - containerPort: 5432
+          readinessProbe:
+            exec:
+              command: ["bash","-c","pg_isready -U postgres"]
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          livenessProbe:
+            exec:
+              command: ["bash","-c","pg_isready -U postgres"]
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+      volumes:
+        - name: data
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: user-db
+  namespace: bookbarter
+spec:
+  selector:
+    app: user-db
+  ports:
+    - port: 5432
+      targetPort: 5432
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: book-db
+  namespace: bookbarter
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: book-db
+  template:
+    metadata:
+      labels:
+        app: book-db
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:16
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: POSTGRES_USER
+              value: postgres
+            - name: POSTGRES_PASSWORD
+              value: "12345"
+            - name: POSTGRES_DB
+              value: book
+          ports:
+            - containerPort: 5432
+          readinessProbe:
+            exec:
+              command: ["bash","-c","pg_isready -U postgres"]
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          livenessProbe:
+            exec:
+              command: ["bash","-c","pg_isready -U postgres"]
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+      volumes:
+        - name: data
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: book-db
+  namespace: bookbarter
+spec:
+  selector:
+    app: book-db
+  ports:
+    - port: 5432
+      targetPort: 5432
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: purchase-db
+  namespace: bookbarter
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: purchase-db
+  template:
+    metadata:
+      labels:
+        app: purchase-db
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:16
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: POSTGRES_USER
+              value: postgres
+            - name: POSTGRES_PASSWORD
+              value: "12345"
+            - name: POSTGRES_DB
+              value: purchase
+          ports:
+            - containerPort: 5432
+          readinessProbe:
+            exec:
+              command: ["bash","-c","pg_isready -U postgres"]
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          livenessProbe:
+            exec:
+              command: ["bash","-c","pg_isready -U postgres"]
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+      volumes:
+        - name: data
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: purchase-db
+  namespace: bookbarter
+spec:
+  selector:
+    app: purchase-db
+  ports:
+    - port: 5432
+      targetPort: 5432
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: notification-db
+  namespace: bookbarter
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: notification-db
+  template:
+    metadata:
+      labels:
+        app: notification-db
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:16
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: POSTGRES_USER
+              value: postgres
+            - name: POSTGRES_PASSWORD
+              value: "12345"
+            - name: POSTGRES_DB
+              value: notification
+          ports:
+            - containerPort: 5432
+          readinessProbe:
+            exec:
+              command: ["bash","-c","pg_isready -U postgres"]
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          livenessProbe:
+            exec:
+              command: ["bash","-c","pg_isready -U postgres"]
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+      volumes:
+        - name: data
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: notification-db
+  namespace: bookbarter
+spec:
+  selector:
+    app: notification-db
+  ports:
+    - port: 5432
+      targetPort: 5432
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: review-db
+  namespace: bookbarter
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: review-db
+  template:
+    metadata:
+      labels:
+        app: review-db
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:16
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: POSTGRES_USER
+              value: postgres
+            - name: POSTGRES_PASSWORD
+              value: "12345"
+            - name: POSTGRES_DB
+              value: review
+          ports:
+            - containerPort: 5432
+          readinessProbe:
+            exec:
+              command: ["bash","-c","pg_isready -U postgres"]
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          livenessProbe:
+            exec:
+              command: ["bash","-c","pg_isready -U postgres"]
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+      volumes:
+        - name: data
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: review-db
+  namespace: bookbarter
+spec:
+  selector:
+    app: review-db
+  ports:
+    - port: 5432
+      targetPort: 5432
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: book-seed
+  namespace: bookbarter
+spec:
+  template:
+    metadata:
+      labels:
+        app: book-seed
+    spec:
+      restartPolicy: Never
+      initContainers:
+        - name: wait-for-book-service
+          image: busybox:1.36
+          command: ['sh', '-c']
+          args:
+            - >-
+              echo "Waiting for book-service to be ready...";
+              until nc -z book-service 8083; do
+                echo "book-service is not ready yet. Waiting...";
+                sleep 5;
+              done;
+              echo "Waiting extra time for service initialization...";
+              sleep 10;
+              echo "book-service is ready!";
+        - name: wait-for-schema
+          image: postgres:16
+          env:
+            - name: PGPASSWORD
+              value: "12345"
+          command: ["/bin/bash","-c"]
+          args:
+            - >-
+              echo "Waiting for database and schema...";
+              until pg_isready -h book-db -p 5432 -U postgres -d book; do
+                echo "Database not ready. Waiting...";
+                sleep 2;
+              done;
+              until psql -h book-db -U postgres -d book -tAc "SELECT 1 FROM information_schema.tables WHERE table_schema='public' AND table_name='books'" | grep -q 1; do
+                echo "Schema not created yet. Waiting...";
+                sleep 3;
+              done;
+              echo "Database and schema are ready!";
+      containers:
+        - name: seed
+          image: postgres:16
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: PGPASSWORD
+              value: "12345"
+          volumeMounts:
+            - name: seed-sql
+              mountPath: /seed
+          command: ["/bin/bash","-c"]
+          args:
+            - >-
+              echo "Starting data seeding...";
+              psql -h book-db -U postgres -d book -f /seed/book_data_insert.sql;
+              echo "Data seeding completed!";
+      volumes:
+        - name: seed-sql
+          configMap:
+            name: book-seed-sql
+            items:
+              - key: book_data_insert.sql
+                path: book_data_insert.sql
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: eureka
+  namespace: bookbarter
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: eureka
+  template:
+    metadata:
+      labels:
+        app: eureka
+    spec:
+      containers:
+        - name: eureka
+          image: eureka-service
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8761
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 8761
+            initialDelaySeconds: 10
+            periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: eureka
+  namespace: bookbarter
+spec:
+  selector:
+    app: eureka
+  ports:
+    - port: 8761
+      targetPort: 8761
+      nodePort: 30761
+      name: http
+  type: NodePort
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: user-service
+  namespace: bookbarter
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: user-service
+  template:
+    metadata:
+      labels:
+        app: user-service
+    spec:
+      containers:
+        - name: user-service
+          image: user-service
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: EUREKA_INSTANCE_PREFER_IP_ADDRESS
+              value: "true"
+            - name: SPRING_DATASOURCE_URL
+              value: jdbc:postgresql://user-db:5432/user
+            - name: SPRING_DATASOURCE_USERNAME
+              value: postgres
+            - name: SPRING_DATASOURCE_PASSWORD
+              value: "12345"
+            - name: SPRING_DATASOURCE_DRIVER_CLASS_NAME
+              value: org.postgresql.Driver
+            - name: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE
+              value: http://eureka:8761/eureka/
+            - name: JWT_SECRET
+              value: sheeesh
+            - name: JWT_ACCESS_TOKEN_LIFETIME
+              value: 1h
+            - name: JWT_REFRESH_TOKEN_LIFETIME
+              value: 1d
+            - name: SPRING_KAFKA_CONSUMER_BOOTSTRAP_SERVERS
+              value: kafka:9092
+            - name: SPRING_KAFKA_PRODUCER_BOOTSTRAP_SERVERS
+              value: kafka:9092
+          ports:
+            - containerPort: 8082
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: user-service
+  namespace: bookbarter
+spec:
+  selector:
+    app: user-service
+  ports:
+    - port: 8082
+      targetPort: 8082
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: auth-service
+  namespace: bookbarter
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: auth-service
+  template:
+    metadata:
+      labels:
+        app: auth-service
+    spec:
+      containers:
+        - name: auth-service
+          image: auth-service:latest
+          imagePullPolicy: Never
+          env:
+            - name: EUREKA_INSTANCE_PREFER_IP_ADDRESS
+              value: "true"
+            - name: SPRING_DATASOURCE_URL
+              value: jdbc:postgresql://user-db:5432/user
+            - name: SPRING_DATASOURCE_USERNAME
+              value: postgres
+            - name: SPRING_DATASOURCE_PASSWORD
+              value: "12345"
+            - name: SPRING_DATASOURCE_DRIVER_CLASS_NAME
+              value: org.postgresql.Driver
+            - name: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE
+              value: http://eureka:8761/eureka/
+            - name: JWT_SECRET
+              value: sheeesh
+            - name: JWT_ACCESS_TOKEN_LIFETIME
+              value: 1h
+            - name: JWT_REFRESH_TOKEN_LIFETIME
+              value: 1d
+            - name: SPRING_KAFKA_CONSUMER_BOOTSTRAP_SERVERS
+              value: kafka:9092
+            - name: SPRING_KAFKA_PRODUCER_BOOTSTRAP_SERVERS
+              value: kafka:9092
+          ports:
+            - containerPort: 8087
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: auth-service
+  namespace: bookbarter
+spec:
+  selector:
+    app: auth-service
+  ports:
+    - port: 8087
+      targetPort: 8087
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api-gateway
+  namespace: bookbarter
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: api-gateway
+  template:
+    metadata:
+      labels:
+        app: api-gateway
+    spec:
+      containers:
+        - name: api-gateway
+          image: api-gateway
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: EUREKA_INSTANCE_PREFER_IP_ADDRESS
+              value: "true"
+            - name: SERVER_PORT
+              value: "8000"
+            - name: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE
+              value: http://eureka:8761/eureka/
+            - name: JWT_SECRET
+              value: sheeesh
+            - name: JWT_ACCESS_TOKEN_LIFETIME
+              value: 1h
+            - name: JWT_REFRESH_TOKEN_LIFETIME
+              value: 1d
+            - name: MANAGEMENT_TRACING_SAMPLING_PROBABILITY
+              value: "1.0"
+          ports:
+            - containerPort: 8000
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: api-gateway
+  namespace: bookbarter
+spec:
+  selector:
+    app: api-gateway
+  ports:
+    - port: 8000
+      targetPort: 8000
+      nodePort: 30080
+  type: NodePort
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: book-service
+  namespace: bookbarter
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: book-service
+  template:
+    metadata:
+      labels:
+        app: book-service
+    spec:
+      containers:
+        - name: book-service
+          image: book-service
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: EUREKA_INSTANCE_PREFER_IP_ADDRESS
+              value: "true"
+            - name: SPRING_DATASOURCE_URL
+              value: jdbc:postgresql://book-db:5432/book
+            - name: SPRING_DATASOURCE_USERNAME
+              value: postgres
+            - name: SPRING_DATASOURCE_PASSWORD
+              value: "12345"
+            - name: SPRING_DATASOURCE_DRIVER_CLASS_NAME
+              value: org.postgresql.Driver
+            - name: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE
+              value: http://eureka:8761/eureka/
+            - name: SPRING_KAFKA_CONSUMER_BOOTSTRAP_SERVERS
+              value: kafka:9092
+            - name: SPRING_KAFKA_PRODUCER_BOOTSTRAP_SERVERS
+              value: kafka:9092
+            - name: JWT_SECRET
+              value: sheeesh
+            - name: JWT_ACCESS_TOKEN_LIFETIME
+              value: 1h
+            - name: JWT_REFRESH_TOKEN_LIFETIME
+              value: 1d
+          ports:
+            - containerPort: 8083
+          readinessProbe:
+            tcpSocket:
+              port: 8083
+            initialDelaySeconds: 45
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: book-service
+  namespace: bookbarter
+spec:
+  selector:
+    app: book-service
+  ports:
+    - port: 8083
+      targetPort: 8083
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: purchase-service
+  namespace: bookbarter
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: purchase-service
+  template:
+    metadata:
+      labels:
+        app: purchase-service
+    spec:
+      containers:
+        - name: purchase-service
+          image: purchase-service
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: EUREKA_INSTANCE_PREFER_IP_ADDRESS
+              value: "true"
+            - name: SPRING_DATASOURCE_URL
+              value: jdbc:postgresql://purchase-db:5432/purchase
+            - name: SPRING_DATASOURCE_USERNAME
+              value: postgres
+            - name: SPRING_DATASOURCE_PASSWORD
+              value: "12345"
+            - name: SPRING_DATASOURCE_DRIVER_CLASS_NAME
+              value: org.postgresql.Driver
+            - name: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE
+              value: http://eureka:8761/eureka/
+            - name: SPRING_KAFKA_CONSUMER_BOOTSTRAP_SERVERS
+              value: kafka:9092
+            - name: SPRING_KAFKA_PRODUCER_BOOTSTRAP_SERVERS
+              value: kafka:9092
+            - name: JWT_SECRET
+              value: sheeesh
+            - name: JWT_ACCESS_TOKEN_LIFETIME
+              value: 1h
+            - name: JWT_REFRESH_TOKEN_LIFETIME
+              value: 1d
+          ports:
+            - containerPort: 8085
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: purchase-service
+  namespace: bookbarter
+spec:
+  selector:
+    app: purchase-service
+  ports:
+    - port: 8085
+      targetPort: 8085
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: notification-service
+  namespace: bookbarter
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: notification-service
+  template:
+    metadata:
+      labels:
+        app: notification-service
+    spec:
+      containers:
+        - name: notification-service
+          image: notification-service
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: EUREKA_INSTANCE_PREFER_IP_ADDRESS
+              value: "true"
+            - name: SPRING_DATASOURCE_URL
+              value: jdbc:postgresql://notification-db:5432/notification
+            - name: SPRING_DATASOURCE_USERNAME
+              value: postgres
+            - name: SPRING_DATASOURCE_PASSWORD
+              value: "12345"
+            - name: SPRING_DATASOURCE_DRIVER_CLASS_NAME
+              value: org.postgresql.Driver
+            - name: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE
+              value: http://eureka:8761/eureka/
+            - name: SPRING_KAFKA_CONSUMER_BOOTSTRAP_SERVERS
+              value: kafka:9092
+            - name: SPRING_KAFKA_PRODUCER_BOOTSTRAP_SERVERS
+              value: kafka:9092
+            - name: JWT_SECRET
+              value: sheeesh
+            - name: JWT_ACCESS_TOKEN_LIFETIME
+              value: 1h
+            - name: JWT_REFRESH_TOKEN_LIFETIME
+              value: 1d
+          ports:
+            - containerPort: 8088
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: notification-service
+  namespace: bookbarter
+spec:
+  selector:
+    app: notification-service
+  ports:
+    - port: 8088
+      targetPort: 8088
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: review-service
+  namespace: bookbarter
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: review-service
+  template:
+    metadata:
+      labels:
+        app: review-service
+    spec:
+      containers:
+        - name: review-service
+          image: review-service
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: EUREKA_INSTANCE_PREFER_IP_ADDRESS
+              value: "true"
+            - name: SPRING_DATASOURCE_URL
+              value: jdbc:postgresql://review-db:5432/review
+            - name: SPRING_DATASOURCE_USERNAME
+              value: postgres
+            - name: SPRING_DATASOURCE_PASSWORD
+              value: "12345"
+            - name: SPRING_DATASOURCE_DRIVER_CLASS_NAME
+              value: org.postgresql.Driver
+            - name: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE
+              value: http://eureka:8761/eureka/
+            - name: SPRING_KAFKA_CONSUMER_BOOTSTRAP_SERVERS
+              value: kafka:9092
+            - name: SPRING_KAFKA_PRODUCER_BOOTSTRAP_SERVERS
+              value: kafka:9092
+            - name: JWT_SECRET
+              value: sheeesh
+            - name: JWT_ACCESS_TOKEN_LIFETIME
+              value: 1h
+            - name: JWT_REFRESH_TOKEN_LIFETIME
+              value: 1d
+          ports:
+            - containerPort: 8086
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: review-service
+  namespace: bookbarter
+spec:
+  selector:
+    app: review-service
+  ports:
+    - port: 8086
+      targetPort: 8086
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: email-service
+  namespace: bookbarter
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: email-service
+  template:
+    metadata:
+      labels:
+        app: email-service
+    spec:
+      containers:
+        - name: email-service
+          image: email-service
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: EUREKA_INSTANCE_PREFER_IP_ADDRESS
+              value: "true"
+            - name: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE
+              value: http://eureka:8761/eureka/
+            - name: SPRING_KAFKA_CONSUMER_BOOTSTRAP_SERVERS
+              value: kafka:9092
+            - name: SPRING_KAFKA_PRODUCER_BOOTSTRAP_SERVERS
+              value: kafka:9092
+          ports:
+            - containerPort: 8089
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: email-service
+  namespace: bookbarter
+spec:
+  selector:
+    app: email-service
+  ports:
+    - port: 8089
+      targetPort: 8089
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web
+  namespace: bookbarter
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: web
+  template:
+    metadata:
+      labels:
+        app: web
+    spec:
+      containers:
+        - name: web
+          image: bookbarter:latest
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: NODE_ENV
+              value: development
+            - name: VITE_BASE_API_URL
+              value: "http://NODE_IP:30080"
+          ports:
+            - containerPort: 4173
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: web
+  namespace: bookbarter
+spec:
+  selector:
+    app: web
+  ports:
+    - port: 4173
+      targetPort: 4173
+  type: NodePort
+
+

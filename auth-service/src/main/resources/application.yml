@@ -7,6 +7,19 @@ eureka:
       defaultZone: http://localhost:8761/eureka/
 
 management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus,metrics
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+        pushgateway:
+          enabled: true
+          base-url: http://pushgateway:9091
+          push-rate: 10s
+          job: auth-service
   tracing:
     sampling:
       probability: 1.0

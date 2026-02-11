@@ -1,0 +1,50 @@
+# Configuration for Kubernetes Load Balancing Lab
+
+# Application configuration
+application:
+  name: nginx-app
+  image: nginx:alpine
+  replicas: 3  # IMPORTANT: Must be 3 pods
+
+# NodePort Service configuration (Task 2)
+nodeportService:
+  enabled: true
+  name: nginx-nodeport
+  type: NodePort
+  port: 80
+  targetPort: 80
+  nodePort: 30080  # External port for NodePort access
+
+# Ingress configuration with Nginx Ingress Controller (Task 3)
+ingress:
+  enabled: true
+  name: nginx-ingress
+  ingressClassName: nginx  # Uses Nginx Ingress Controller
+  host: nginx-app.local
+  serviceName: nginx-clusterip
+  servicePort: 80
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+
+# ClusterIP Service for Ingress backend
+clusteripService:
+  enabled: true
+  name: nginx-clusterip
+  type: ClusterIP
+  port: 80
+  targetPort: 80
+
+# Ingress Controller configuration
+ingressController:
+  type: nginx  # Nginx Ingress Controller
+  loadBalancerType: LoadBalancer  # Ingress Controller uses LoadBalancer
+
+# Testing configuration
+testing:
+  requestCount: 100  # Number of requests for testing (as per task)
+  expectedPods: 3    # Expected number of pods
+
+# Load balancing mechanism
+loadBalancing:
+  mechanism: kube-proxy  # Kubernetes built-in load balancer
+  algorithm: random      # Random selection by iptables

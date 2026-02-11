@@ -42,7 +42,8 @@ public class SecurityConfig {
                         exchanges
                                 .pathMatchers("/auth/**", "/v3/api-docs/**", "/swagger-resources/**", "/swagger-ui.html",
                                         "/webjars/**", "/swagger-ui/**", "/swagger-ui.html**", "/swagger-ui/**", "/v3/api-docs",
-                                        "/v3/api-docs/**", "/swagger-ui.html**", "/swagger-ui/**").permitAll()
+                                        "/v3/api-docs/**", "/swagger-ui.html**", "/swagger-ui/**", 
+                                        "/actuator/**", "/actuator/prometheus", "/actuator/health", "/actuator/metrics").permitAll()
                                 .pathMatchers("/api/**").hasAnyRole("USER", "ADMIN")
                 )
                 .securityContextRepository(NoOpServerSecurityContextRepository.getInstance())
@@ -72,7 +73,8 @@ public class SecurityConfig {
     @Bean
     public CorsWebFilter corsWebFilter() {
         CorsConfiguration corsConfig = new CorsConfiguration();
-        corsConfig.setAllowedOrigins(List.of("http://localhost:4173", "http://localhost:5173"));
+        // Allow local dev and Minikube NodePort origins (IP may vary)
+        corsConfig.setAllowedOriginPatterns(List.of("http://localhost:*", "http://127.0.0.1:*", "http://192.168.49.2:*"));
         corsConfig.setAllowedMethods(List.of("*"));
         corsConfig.setAllowedHeaders(List.of("*"));
         corsConfig.setAllowCredentials(true);
