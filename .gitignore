@@ -1,0 +1,5 @@
+# CI/CD secrets
+ci/.env
+
+# Maven build output
+target/

@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Агрегатор для CI: дозволяє зібрати, протестувати й проаналізувати (SonarQube)
+  усі Java-мікросервіси однією командою:  ./mvnw verify
+  Кожен сервіс і далі має власний parent (spring-boot-starter-parent) і збирається окремо.
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<groupId>com.example</groupId>
+	<artifactId>bookbarter</artifactId>
+	<version>1.0.0</version>
+	<packaging>pom</packaging>
+	<name>BookBarter</name>
+
+	<properties>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<sonar.projectKey>bookbarter</sonar.projectKey>
+		<sonar.projectName>BookBarter</sonar.projectName>
+	</properties>
+
+	<modules>
+		<module>eureka-service</module>
+		<module>api-gateway-service</module>
+		<module>auth-service</module>
+		<module>user-service</module>
+		<module>book-service</module>
+		<module>purchase-service</module>
+		<module>notification-service</module>
+		<module>review-service</module>
+		<module>wishlist-service</module>
+	</modules>
+</project>

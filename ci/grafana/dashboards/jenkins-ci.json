@@ -1,0 +1,102 @@
+{
+  "title": "Jenkins CI/CD — BookBarter",
+  "uid": "jenkins-ci",
+  "tags": ["bookbarter", "jenkins", "ci-cd"],
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "refresh": "30s",
+  "time": { "from": "now-7d", "to": "now" },
+  "panels": [
+    {
+      "type": "stat",
+      "title": "Результат останньої збірки",
+      "gridPos": { "x": 0, "y": 0, "w": 6, "h": 5 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [{ "expr": "default_jenkins_builds_last_build_result_ordinal{jenkins_job=\"bookbarter\"}", "refId": "A" }],
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "background", "textMode": "value" },
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [{ "type": "value", "options": {
+            "0": { "text": "SUCCESS", "color": "green" },
+            "1": { "text": "UNSTABLE", "color": "yellow" },
+            "2": { "text": "FAILURE", "color": "red" },
+            "3": { "text": "NOT BUILT", "color": "gray" },
+            "4": { "text": "ABORTED", "color": "gray" } } }],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 1 }, { "color": "red", "value": 2 }] }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "type": "stat",
+      "title": "Тривалість останньої збірки",
+      "gridPos": { "x": 6, "y": 0, "w": 6, "h": 5 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [{ "expr": "default_jenkins_builds_last_build_duration_milliseconds{jenkins_job=\"bookbarter\"}", "refId": "A" }],
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "fieldConfig": { "defaults": { "unit": "ms" }, "overrides": [] }
+    },
+    {
+      "type": "stat",
+      "title": "Стабільність збірок (health score), %",
+      "gridPos": { "x": 12, "y": 0, "w": 6, "h": 5 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [{ "expr": "default_jenkins_builds_health_score{jenkins_job=\"bookbarter\"}", "refId": "A" }],
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "fieldConfig": { "defaults": { "unit": "percent", "decimals": 0, "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }, { "color": "yellow", "value": 60 }, { "color": "green", "value": 85 }] } }, "overrides": [] }
+    },
+    {
+      "type": "stat",
+      "title": "Всього збірок",
+      "gridPos": { "x": 18, "y": 0, "w": 6, "h": 5 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [{ "expr": "sum(default_jenkins_builds_duration_milliseconds_summary_count{jenkins_job=\"bookbarter\"})", "refId": "A" }],
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "fieldConfig": { "defaults": {}, "overrides": [] }
+    },
+    {
+      "type": "timeseries",
+      "title": "Тривалість збірки (lead time від коміту до деплою)",
+      "gridPos": { "x": 0, "y": 5, "w": 12, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [{ "expr": "default_jenkins_builds_last_build_duration_milliseconds{jenkins_job=\"bookbarter\"}", "legendFormat": "остання збірка", "refId": "A" }],
+      "fieldConfig": { "defaults": { "unit": "ms", "custom": { "drawStyle": "line", "lineInterpolation": "stepAfter" } }, "overrides": [] }
+    },
+    {
+      "type": "bargauge",
+      "title": "Тривалість етапів останньої збірки",
+      "gridPos": { "x": 12, "y": 5, "w": 12, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [{ "expr": "sum by (stage) (default_jenkins_builds_last_stage_duration_milliseconds_summary_sum{jenkins_job=\"bookbarter\", stage!~\"Declarative.*\"})", "legendFormat": "{{stage}}", "instant": true, "refId": "A" }],
+      "options": { "orientation": "horizontal", "displayMode": "gradient", "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "fieldConfig": { "defaults": { "unit": "ms" }, "overrides": [] }
+    },
+    {
+      "type": "timeseries",
+      "title": "Збірки: успішні vs невдалі (з моменту старту Jenkins)",
+      "gridPos": { "x": 0, "y": 13, "w": 12, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        { "expr": "sum(default_jenkins_builds_success_build_count_total{jenkins_job=\"bookbarter\"})", "legendFormat": "успішні", "refId": "A" },
+        { "expr": "sum(default_jenkins_builds_failed_build_count_total{jenkins_job=\"bookbarter\"})", "legendFormat": "невдалі", "refId": "B" }
+      ],
+      "fieldConfig": { "defaults": {}, "overrides": [
+        { "matcher": { "id": "byName", "options": "успішні" }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "green" } }] },
+        { "matcher": { "id": "byName", "options": "невдалі" }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "red" } }] }
+      ] }
+    },
+    {
+      "type": "timeseries",
+      "title": "Тести останньої збірки та executors",
+      "gridPos": { "x": 12, "y": 13, "w": 12, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        { "expr": "default_jenkins_executors_busy", "legendFormat": "зайняті executors", "refId": "A" },
+        { "expr": "default_jenkins_executors_queue_length", "legendFormat": "довжина черги", "refId": "B" },
+        { "expr": "default_jenkins_builds_last_build_tests_total{jenkins_job=\"bookbarter\"}", "legendFormat": "тестів у збірці", "refId": "C" },
+        { "expr": "default_jenkins_builds_last_build_tests_failing{jenkins_job=\"bookbarter\"}", "legendFormat": "тестів падає", "refId": "D" }
+      ],
+      "fieldConfig": { "defaults": {}, "overrides": [] }
+    }
+  ]
+}

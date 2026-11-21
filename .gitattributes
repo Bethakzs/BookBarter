@@ -1,0 +1,4 @@
+# Скрипти, що виконуються в Linux (Jenkins, Docker), завжди з LF
+mvnw text eol=lf
+*.sh text eol=lf
+Jenkinsfile text eol=lf

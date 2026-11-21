@@ -1,0 +1,42 @@
+# Фронтенд BookBarter. Пайплайн застосовує цей маніфест лише якщо в репозиторії є bookbarter-front/package.json
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web
+  namespace: bookbarter
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: web
+  template:
+    metadata:
+      labels:
+        app: web
+    spec:
+      containers:
+        - name: web
+          image: bethakzs/bookbarter-web:latest
+          imagePullPolicy: Always
+          env:
+            - name: NODE_ENV
+              value: development
+            - name: VITE_BASE_API_URL
+              value: "http://NODE_IP:30080"
+          ports:
+            - containerPort: 4173
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: web
+  namespace: bookbarter
+spec:
+  selector:
+    app: web
+  ports:
+    - port: 4173
+      targetPort: 4173
+  type: NodePort
+
+
