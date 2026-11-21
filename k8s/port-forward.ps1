@@ -1,6 +1,7 @@
 # Доступ до BookBarter у Kubernetes Docker Desktop з браузера.
 # Kubernetes Docker Desktop (kind) не публікує NodePort-и на localhost Windows,
-# тому сервіси прокидаються через kubectl port-forward.
+# тому сервіси прокидаються через kubectl port-forward. Після кожного деплою з Jenkins
+# поди замінюються — скрипт автоматично перепідключається.
 #
 #   powershell -ExecutionPolicy Bypass -File k8s\port-forward.ps1
 #
@@ -15,8 +16,15 @@ $forwards = @(
     @{ svc = "prometheus";  ports = "9091:9090" }
 )
 
-$procs = foreach ($f in $forwards) {
-    Start-Process kubectl -ArgumentList "-n", $ns, "port-forward", "svc/$($f.svc)", $f.ports -NoNewWindow -PassThru
+$jobs = foreach ($f in $forwards) {
+    Start-Job -ArgumentList $ns, $f.svc, $f.ports -ScriptBlock {
+        param($ns, $svc, $ports)
+        while ($true) {
+            kubectl -n $ns port-forward "svc/$svc" $ports 2>&1
+            Write-Output "[$svc] reconnecting..."
+            Start-Sleep -Seconds 3
+        }
+    }
 }
 
 Write-Host ""
@@ -26,7 +34,11 @@ Write-Host "Prometheus:  http://localhost:9091"
 Write-Host "Ctrl+C - stop"
 
 try {
-    Wait-Process -Id $procs.Id
+    while ($true) {
+        $jobs | Receive-Job
+        Start-Sleep -Seconds 2
+    }
 } finally {
-    $procs | Stop-Process -ErrorAction SilentlyContinue
+    $jobs | Stop-Job
+    $jobs | Remove-Job -Force
 }
