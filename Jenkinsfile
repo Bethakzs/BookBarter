@@ -3,18 +3,29 @@
 //             -> Docker Hub -> Kubernetes (rolling update) -> Smoke test (автовідкат при збої)
 
 // Сервіси, які пакуються в Docker-образи та розгортаються в Kubernetes.
-// dir — папка в репозиторії (і назва образу), deployment — назва Deployment у k8s/bookbarter.yaml
-def SERVICES = [
+// dir — папка в репозиторії (і назва образу), deployment — назва Deployment у k8s/*.yaml
+// Основний профіль (k8s/bookbarter.yaml): реєстрація, авторизація, користувачі, книги, покупки
+CORE_SERVICES = [
     [dir: 'eureka-service',       deployment: 'eureka'],
     [dir: 'api-gateway-service',  deployment: 'api-gateway'],
     [dir: 'auth-service',         deployment: 'auth-service'],
     [dir: 'user-service',         deployment: 'user-service'],
     [dir: 'book-service',         deployment: 'book-service'],
     [dir: 'purchase-service',     deployment: 'purchase-service'],
+]
+// Додаткові сервіси (k8s/optional-services.yaml) — розгортаються лише з параметром FULL_STACK=true
+OPTIONAL_SERVICES = [
     [dir: 'notification-service', deployment: 'notification-service'],
     [dir: 'review-service',       deployment: 'review-service'],
     [dir: 'email-service',        deployment: 'email-service'],
 ]
+// Усі Java-модулі (для звіту покриття); тести й SonarQube проходять для всіх, незалежно від профілю
+JAVA_MODULES = ['eureka-service', 'api-gateway-service', 'auth-service', 'user-service', 'book-service',
+                'purchase-service', 'notification-service', 'review-service', 'wishlist-service']
+
+def deployedServices() {
+    return params.FULL_STACK ? CORE_SERVICES + OPTIONAL_SERVICES : CORE_SERVICES
+}
 
 def imageNames(services) {
     def names = services.collect { it.dir }
@@ -41,6 +52,7 @@ pipeline {
     parameters {
         booleanParam(name: 'DEPLOY', defaultValue: true, description: 'Публікувати образи й розгортати в Kubernetes')
         booleanParam(name: 'SONAR', defaultValue: true, description: 'Аналіз SonarQube + Quality Gate')
+        booleanParam(name: 'FULL_STACK', defaultValue: false, description: 'Розгорнути також notification, review та email (Go) сервіси')
     }
 
     environment {
@@ -78,10 +90,9 @@ pipeline {
                 always {
                     junit allowEmptyResults: true, testResults: '**/target/surefire-reports/*.xml'
                     script {
-                        def javaModules = SERVICES.collect { it.dir }.findAll { it != 'email-service' } + ['wishlist-service']
                         recordCoverage(tools: [[parser: 'JACOCO', pattern: '**/target/site/jacoco/jacoco.xml']],
                                        id: 'jacoco', name: 'JaCoCo coverage',
-                                       sourceDirectories: javaModules.collect { [path: "${it}/src/main/java"] },
+                                       sourceDirectories: JAVA_MODULES.collect { [path: "${it}/src/main/java"] },
                                        sourceCodeRetention: 'LAST_BUILD')
                     }
                 }
@@ -110,7 +121,7 @@ pipeline {
         stage('Docker build') {
             steps {
                 script {
-                    SERVICES.each { s ->
+                    deployedServices().each { s ->
                         sh "docker build -t ${IMAGE_PREFIX}-${s.dir}:${IMAGE_TAG} -t ${IMAGE_PREFIX}-${s.dir}:latest ${s.dir}"
                     }
                     if (fileExists('bookbarter-front/package.json')) {
@@ -133,7 +144,7 @@ pipeline {
                     }
                     if (hasToken) {
                         echo 'Публікація образів у Docker Hub'
-                        imageNames(SERVICES).each { name ->
+                        imageNames(deployedServices()).each { name ->
                             sh "docker push ${IMAGE_PREFIX}-${name}:${IMAGE_TAG}"
                             sh "docker push ${IMAGE_PREFIX}-${name}:latest"
                         }
@@ -141,7 +152,7 @@ pipeline {
                         // Резервний режим для локального стенду: токен Docker Hub не задано (ci/.env -> DOCKERHUB_TOKEN),
                         // тому образи імпортуються напряму в containerd вузла Kubernetes (аналог "kind load docker-image")
                         echo 'DOCKERHUB_TOKEN не задано — образи завантажуються напряму у вузол Kubernetes'
-                        imageNames(SERVICES).each { name ->
+                        imageNames(deployedServices()).each { name ->
                             sh "docker save ${IMAGE_PREFIX}-${name}:${IMAGE_TAG} | docker exec -i ${K8S_NODE} ctr -n k8s.io images import -"
                         }
                     }
@@ -180,6 +191,14 @@ pipeline {
                            -e "s#imagePullPolicy: Always#imagePullPolicy: IfNotPresent#" \
                            k8s/bookbarter.yaml | kubectl apply -f -
                     kubectl apply -f k8s/prometheus.yaml
+                    if [ "$FULL_STACK" = "true" ]; then
+                        sed -E -e "s#(image: [^ ]+/bookbarter-[a-z-]+):latest#\\1:${IMAGE_TAG}#" \
+                               -e "s#imagePullPolicy: Always#imagePullPolicy: IfNotPresent#" \
+                               k8s/optional-services.yaml | kubectl apply -f -
+                    else
+                        # Мінімальний профіль: додаткові сервіси прибираються, щоб звільнити пам'ять
+                        kubectl delete -f k8s/optional-services.yaml --ignore-not-found
+                    fi
                     if [ -f bookbarter-front/package.json ]; then
                         sed -E -e "s#(image: [^ ]+/bookbarter-web):latest#\\1:${IMAGE_TAG}#" \
                                -e "s#imagePullPolicy: Always#imagePullPolicy: IfNotPresent#" \
@@ -187,7 +206,7 @@ pipeline {
                     fi
                 '''
                 script {
-                    SERVICES.each { s ->
+                    deployedServices().each { s ->
                         sh "kubectl -n ${K8S_NAMESPACE} rollout status deployment/${s.deployment} --timeout=600s"
                     }
                 }
@@ -196,7 +215,7 @@ pipeline {
                 failure {
                     echo 'Розгортання не вдалося — відкат до попередньої версії'
                     sh 'kubectl -n "$K8S_NAMESPACE" get pods -o wide || true'
-                    script { rollback(SERVICES, env.K8S_NAMESPACE) }
+                    script { rollback(deployedServices(), env.K8S_NAMESPACE) }
                 }
             }
         }
@@ -227,7 +246,7 @@ pipeline {
             post {
                 failure {
                     echo 'Smoke test не пройдено — відкат до попередньої версії'
-                    script { rollback(SERVICES, env.K8S_NAMESPACE) }
+                    script { rollback(deployedServices(), env.K8S_NAMESPACE) }
                 }
             }
         }

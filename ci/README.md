@@ -69,7 +69,12 @@ docker compose up -d --build
 
 Тригери: GitHub webhook (`http://<публічна-адреса>/github-webhook/`, напр. через ngrok) або опитування репозиторію кожні 2 хв (Poll SCM) — працює без публічної адреси.
 
-Параметр `DEPLOY=false` — лише CI (збірка, тести, Sonar, образи) без публікації й розгортання.
+Параметри збірки:
+- `DEPLOY=false` — лише CI (збірка, тести, Sonar, образи) без публікації й розгортання;
+- `SONAR=false` — пропустити SonarQube (швидка збірка);
+- `FULL_STACK=true` — розгорнути також додаткові сервіси з `k8s/optional-services.yaml` (notification, review, email на Go).
+  За замовчуванням розгортається **мінімальний профіль** — eureka, api-gateway, auth, user, book, purchase + Kafka і PostgreSQL —
+  щоб стенд вміщався в пам'ять ноутбука. Тести й аналіз SonarQube виконуються для всіх модулів незалежно від профілю.
 
 ## 5. Моніторинг
 
