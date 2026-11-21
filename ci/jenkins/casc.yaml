@@ -1,0 +1,79 @@
+# Jenkins Configuration as Code: уся конфігурація Jenkins описана тут,
+# секрети підставляються зі змінних середовища (файл ci/.env, який НЕ комітиться).
+jenkins:
+  systemMessage: "BookBarter CI/CD — Jenkins (налаштовано через JCasC)"
+  numExecutors: 2
+  mode: NORMAL
+  securityRealm:
+    local:
+      allowsSignup: false
+      users:
+        - id: "${JENKINS_ADMIN_ID}"
+          password: "${JENKINS_ADMIN_PASSWORD}"
+  authorizationStrategy:
+    loggedInUsersCanDoAnything:
+      allowAnonymousRead: false
+
+credentials:
+  system:
+    domainCredentials:
+      - credentials:
+          - usernamePassword:
+              scope: GLOBAL
+              id: "dockerhub"
+              description: "Docker Hub (логін + access token)"
+              username: "${DOCKERHUB_USER}"
+              password: "${DOCKERHUB_TOKEN}"
+          - string:
+              scope: GLOBAL
+              id: "sonar-token"
+              description: "SonarQube token"
+              secret: "${SONAR_TOKEN}"
+          - string:
+              scope: GLOBAL
+              id: "bookbarter-db-password"
+              description: "Пароль PostgreSQL для сервісів у Kubernetes"
+              secret: "${APP_DB_PASSWORD}"
+          - string:
+              scope: GLOBAL
+              id: "bookbarter-jwt-secret"
+              description: "JWT secret для сервісів у Kubernetes"
+              secret: "${APP_JWT_SECRET}"
+
+unclassified:
+  location:
+    url: "http://localhost:8080/"
+  sonarGlobalConfiguration:
+    buildWrapperEnabled: true
+    installations:
+      - name: "sonarqube"
+        serverUrl: "http://sonarqube:9000"
+        credentialsId: "sonar-token"
+
+jobs:
+  - script: |
+      pipelineJob('bookbarter') {
+        displayName('BookBarter CI/CD')
+        description('Build -> Unit tests + JaCoCo -> SonarQube Quality Gate -> Docker build -> Docker Hub -> Kubernetes -> Smoke test')
+        logRotator { numToKeep(30) }
+        properties {
+          pipelineTriggers {
+            triggers {
+              githubPush()
+              pollSCM { scmpoll_spec('H/2 * * * *') }
+            }
+          }
+        }
+        definition {
+          cpsScm {
+            scm {
+              git {
+                remote { url('${GIT_REPO_URL}') }
+                branch('*/${GIT_BRANCH}')
+              }
+            }
+            scriptPath('Jenkinsfile')
+            lightweight(true)
+          }
+        }
+      }

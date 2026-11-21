@@ -1,0 +1,29 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  # Метрики самого Jenkins (плагін Prometheus Metrics): кількість/тривалість збірок, черга, executors
+  - job_name: jenkins
+    metrics_path: /prometheus/
+    static_configs:
+      - targets: ['jenkins:8080']
+        labels:
+          component: ci
+
+  - job_name: ci-prometheus
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # Федерація з Prometheus, що працює в Kubernetes (k8s/prometheus.yaml, NodePort 30090)
+  # і збирає метрики мікросервісів BookBarter (/actuator/prometheus).
+  - job_name: k8s-federate
+    honor_labels: true
+    metrics_path: /federate
+    params:
+      'match[]':
+        - '{job=~".+"}'
+    static_configs:
+      - targets: ['host.docker.internal:30090']
+        labels:
+          component: app

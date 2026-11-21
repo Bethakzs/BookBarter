@@ -1,0 +1,108 @@
+# Інфраструктура CI/CD для BookBarter.
+# Запуск (з папки ci):  docker compose up -d --build
+#   Jenkins     http://localhost:8080
+#   SonarQube   http://localhost:9000
+#   Prometheus  http://localhost:9090   (метрики Jenkins + федерація з Prometheus у Kubernetes)
+#   Grafana     http://localhost:3000
+name: bookbarter-ci
+
+services:
+  jenkins:
+    build: ./jenkins
+    image: bookbarter-jenkins:local
+    container_name: jenkins
+    # root потрібен, щоб Jenkins мав доступ до docker.sock Docker Desktop (лише для локального стенду)
+    user: root
+    env_file: .env
+    environment:
+      COLLECTING_METRICS_PERIOD_IN_SECONDS: "30"
+    ports:
+      - "8080:8080"
+    volumes:
+      - jenkins_home:/var/jenkins_home
+      - ./jenkins/casc.yaml:/usr/share/jenkins/casc/casc.yaml:ro
+      - /var/run/docker.sock:/var/run/docker.sock
+      # kubeconfig Docker Desktop (Settings -> Kubernetes -> Enable Kubernetes)
+      - ${USERPROFILE:-~}/.kube:/root/.kube
+      - maven_repo:/root/.m2
+    restart: unless-stopped
+
+  sonar-db:
+    image: postgres:16
+    container_name: sonar-db
+    environment:
+      POSTGRES_USER: sonar
+      POSTGRES_PASSWORD: sonar
+      POSTGRES_DB: sonar
+    volumes:
+      - sonar_db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sonar"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  sonarqube:
+    image: sonarqube:community
+    container_name: sonarqube
+    depends_on:
+      sonar-db:
+        condition: service_healthy
+    environment:
+      SONAR_JDBC_URL: jdbc:postgresql://sonar-db:5432/sonar
+      SONAR_JDBC_USERNAME: sonar
+      SONAR_JDBC_PASSWORD: sonar
+      # Docker Desktop (WSL2) не дає змінити vm.max_map_count без перезапуску VM
+      SONAR_ES_BOOTSTRAP_CHECKS_DISABLE: "true"
+      # Обмеження пам'яті для локального стенду
+      SONAR_WEB_JAVAOPTS: "-Xmx384m -Xms128m"
+      SONAR_CE_JAVAOPTS: "-Xmx512m -Xms128m"
+      SONAR_SEARCH_JAVAOPTS: "-Xmx384m -Xms384m"
+    ports:
+      - "9000:9000"
+    volumes:
+      - sonar_data:/opt/sonarqube/data
+      - sonar_extensions:/opt/sonarqube/extensions
+      - sonar_logs:/opt/sonarqube/logs
+    restart: unless-stopped
+
+  prometheus:
+    image: prom/prometheus:v2.53.2
+    container_name: ci-prometheus
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.retention.time=15d
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:11.2.0
+    container_name: ci-grafana
+    depends_on:
+      - prometheus
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafana_data:/var/lib/grafana
+    restart: unless-stopped
+
+volumes:
+  jenkins_home:
+  maven_repo:
+  sonar_db:
+  sonar_data:
+  sonar_extensions:
+  sonar_logs:
+  prometheus_data:
+  grafana_data:
