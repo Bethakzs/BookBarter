@@ -31,12 +31,10 @@ services:
   web:
     build:
       context: ./bookbarter-front
-      dockerfile: Dockerfile
-    image: bookbarter:latest
+      dockerfile: ../frontend/Dockerfile
+    image: bookbarter-web:latest
     ports:
-      - "4173:4173"
-    environment:
-      - NODE_ENV=development
+      - "4173:80"
     restart: unless-stopped
   user-db:
     image: postgres

@@ -1,4 +1,6 @@
-# Фронтенд BookBarter. Пайплайн застосовує цей маніфест лише якщо в репозиторії є bookbarter-front/package.json
+# Фронтенд BookBarter (React + Vite, submodule bookbarter-front, образ із frontend/Dockerfile).
+# Пайплайн застосовує цей маніфест, якщо в репозиторії є bookbarter-front/package.json.
+# У браузері: k8s/port-forward.ps1 -> http://localhost:4173 (API — http://localhost:8000)
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -18,13 +20,20 @@ spec:
         - name: web
           image: bethakzs/bookbarter-web:latest
           imagePullPolicy: Always
-          env:
-            - name: NODE_ENV
-              value: development
-            - name: VITE_BASE_API_URL
-              value: "http://NODE_IP:30080"
           ports:
-            - containerPort: 4173
+            - containerPort: 80
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 2
+            periodSeconds: 5
+          resources:
+            requests:
+              memory: "16Mi"
+              cpu: "10m"
+            limits:
+              memory: "64Mi"
 ---
 apiVersion: v1
 kind: Service
@@ -35,8 +44,7 @@ spec:
   selector:
     app: web
   ports:
-    - port: 4173
-      targetPort: 4173
+    - port: 80
+      targetPort: 80
+      nodePort: 30173
   type: NodePort
-
-

@@ -1,0 +1,50 @@
+#!/bin/sh
+# Миттєвий запуск збірки в локальному Jenkins після `git push` (замість очікування Poll SCM до 2 хв).
+#
+# У git немає post-push хука, тому pre-push запускає фоновий процес: він чекає, поки GitHub
+# прийме новий коміт, і тоді просить Jenkins (localhost) негайно перевірити репозиторій ("Poll now").
+# Нічого не відкривається в інтернет. Якщо Jenkins вимкнений — хук мовчки нічого не робить,
+# а Poll SCM підхопить зміни, коли Jenkins запуститься.
+#
+# Увімкнення (один раз):  git config core.hooksPath ci/hooks
+
+ROOT=$(git rev-parse --show-toplevel)
+ENV_FILE="$ROOT/ci/.env"
+[ -f "$ENV_FILE" ] || exit 0
+
+env_value() { grep "^$1=" "$ENV_FILE" | head -1 | cut -d= -f2- | tr -d '\r'; }
+JUSER=$(env_value JENKINS_ADMIN_ID)
+JPASS=$(env_value JENKINS_ADMIN_PASSWORD)
+BRANCH=$(env_value GIT_BRANCH)
+JURL=${JENKINS_URL:-http://localhost:8080}
+JOB=${JENKINS_JOB:-bookbarter}
+REMOTE="$1"
+
+while read -r local_ref local_sha remote_ref remote_sha; do
+    # тільки push у гілку, за якою стежить Jenkins (не видалення гілки)
+    [ "$remote_ref" = "refs/heads/${BRANCH:-main}" ] || continue
+    case "$local_sha" in 0000000000000000000000000000000000000000) continue ;; esac
+
+    (
+        i=0
+        while [ $i -lt 60 ]; do
+            if git ls-remote "$REMOTE" "$remote_ref" 2>/dev/null | grep -q "^$local_sha"; then
+                jar=$(mktemp)
+                crumb=$(curl -s -c "$jar" -u "$JUSER:$JPASS" "$JURL/crumbIssuer/api/json" \
+                        | sed -n 's/.*"crumb":"\([^"]*\)".*/\1/p')
+                # "Poll now": Jenkins одразу перевіряє GitHub і запускає збірку, якщо є новий коміт
+                # (причина збірки — "Started by an SCM change", як і при звичайному Poll SCM)
+                curl -s -o /dev/null -b "$jar" -u "$JUSER:$JPASS" -H "Jenkins-Crumb: $crumb" \
+                     -X POST "$JURL/job/$JOB/polling"
+                rm -f "$jar"
+                exit 0
+            fi
+            i=$((i + 1))
+            sleep 2
+        done
+    ) </dev/null >/dev/null 2>&1 &
+
+    echo "[ci] Jenkins запустить збірку, щойно GitHub прийме push: $JURL/job/$JOB/"
+done
+
+exit 0

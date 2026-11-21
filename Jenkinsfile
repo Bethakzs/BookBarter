@@ -32,9 +32,19 @@ def expectedEurekaApps() {
                              .collect { it.deployment.toUpperCase() }.join(' ')
 }
 
+def hasFrontend() {
+    // фронтенд підключений як git submodule bookbarter-front (https://github.com/hryntar/BookBarter)
+    return fileExists('bookbarter-front/package.json')
+}
+
+// Deployment-и, за якими стежимо при розгортанні та відкаті
+def rolloutTargets() {
+    return deployedServices() + (hasFrontend() ? [[dir: 'bookbarter-front', deployment: 'web']] : [])
+}
+
 def imageNames(services) {
     def names = services.collect { it.dir }
-    if (fileExists('bookbarter-front/package.json')) { names << 'web' }
+    if (hasFrontend()) { names << 'web' }
     return names
 }
 
@@ -71,6 +81,7 @@ pipeline {
         KUBECONFIG         = "${env.WORKSPACE}/.kubeconfig"
         GATEWAY_URL        = "http://${K8S_NODE}:30080"
         EUREKA_URL         = "http://${K8S_NODE}:30761"
+        WEB_URL            = "http://${K8S_NODE}:30173"
         MAVEN_ARGS         = '-B -ntp'
     }
 
@@ -78,6 +89,8 @@ pipeline {
         stage('Checkout') {
             steps {
                 checkout scm
+                // фронтенд — git submodule
+                sh 'git submodule update --init --recursive'
                 script {
                     env.GIT_SHORT = sh(returnStdout: true, script: 'git rev-parse --short HEAD').trim()
                     env.IMAGE_TAG = "${env.BUILD_NUMBER}-${env.GIT_SHORT}"
@@ -129,8 +142,8 @@ pipeline {
                     deployedServices().each { s ->
                         sh "docker build -t ${IMAGE_PREFIX}-${s.dir}:${IMAGE_TAG} -t ${IMAGE_PREFIX}-${s.dir}:latest ${s.dir}"
                     }
-                    if (fileExists('bookbarter-front/package.json')) {
-                        sh "docker build -t ${IMAGE_PREFIX}-web:${IMAGE_TAG} -t ${IMAGE_PREFIX}-web:latest bookbarter-front"
+                    if (hasFrontend()) {
+                        sh "docker build -f frontend/Dockerfile -t ${IMAGE_PREFIX}-web:${IMAGE_TAG} -t ${IMAGE_PREFIX}-web:latest bookbarter-front"
                     }
                 }
             }
@@ -211,7 +224,7 @@ pipeline {
                     fi
                 '''
                 script {
-                    deployedServices().each { s ->
+                    rolloutTargets().each { s ->
                         sh "kubectl -n ${K8S_NAMESPACE} rollout status deployment/${s.deployment} --timeout=600s"
                     }
                 }
@@ -220,7 +233,7 @@ pipeline {
                 failure {
                     echo 'Розгортання не вдалося — відкат до попередньої версії'
                     sh 'kubectl -n "$K8S_NAMESPACE" get pods -o wide || true'
-                    script { rollback(deployedServices(), env.K8S_NAMESPACE) }
+                    script { rollback(rolloutTargets(), env.K8S_NAMESPACE) }
                 }
             }
         }
@@ -256,12 +269,17 @@ pipeline {
                     code=$(curl -s -o /dev/null -w "%{http_code}" "$GATEWAY_URL/api/book/get-all")
                     echo "GET /api/book/get-all -> HTTP $code"
                     case "$code" in 401|403) ;; *) echo "Неочікуваний код відповіді"; exit 1 ;; esac
+
+                    if [ -f bookbarter-front/package.json ]; then
+                        echo "Фронтенд: $WEB_URL"
+                        curl -fsS "$WEB_URL/" | grep -q 'id="root"' && echo "Фронтенд віддає index.html (React)" || { echo "Фронтенд не відповідає"; exit 1; }
+                    fi
                 '''
             }
             post {
                 failure {
                     echo 'Smoke test не пройдено — відкат до попередньої версії'
-                    script { rollback(deployedServices(), env.K8S_NAMESPACE) }
+                    script { rollback(rolloutTargets(), env.K8S_NAMESPACE) }
                 }
             }
         }

@@ -5,15 +5,17 @@
 #
 #   powershell -ExecutionPolicy Bypass -File k8s\port-forward.ps1
 #
+#   Фронтенд:     http://localhost:4173
 #   API Gateway:  http://localhost:8000/actuator/health
-#   Eureka:       http://localhost:8761
+#   Eureka:      http://localhost:8761
 #   Prometheus:   http://localhost:9091  (Prometheus у кластері; CI-Prometheus — http://localhost:9090)
 
 $ns = "bookbarter"
 $forwards = @(
     @{ svc = "api-gateway"; ports = "8000:8000" },
     @{ svc = "eureka";      ports = "8761:8761" },
-    @{ svc = "prometheus";  ports = "9091:9090" }
+    @{ svc = "prometheus";  ports = "9091:9090" },
+    @{ svc = "web";         ports = "4173:80" }
 )
 
 $jobs = foreach ($f in $forwards) {
@@ -28,6 +30,7 @@ $jobs = foreach ($f in $forwards) {
 }
 
 Write-Host ""
+Write-Host "Frontend:    http://localhost:4173"
 Write-Host "API Gateway: http://localhost:8000/actuator/health"
 Write-Host "Eureka:      http://localhost:8761"
 Write-Host "Prometheus:  http://localhost:9091"

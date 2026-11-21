@@ -1,0 +1,4 @@
+[submodule "bookbarter-front"]
+	path = bookbarter-front
+	url = https://github.com/hryntar/BookBarter.git
+	branch = main

@@ -39,6 +39,13 @@ docker compose up -d --build
 | Prometheus | http://localhost:9090 | — |
 | Grafana | http://localhost:3000 | `GRAFANA_ADMIN_USER` / `GRAFANA_ADMIN_PASSWORD` з `ci/.env` |
 
+**Що має працювати в момент push:** Docker Desktop з увімкненим Kubernetes і контейнери `ci/`.
+Сам застосунок вручну не запускається: його розгортає в Kubernetes пайплайн (етап Deploy).
+Якщо Jenkins був вимкнений під час push, він збере пропущений коміт після запуску (Poll SCM).
+Фронтенд — git submodule `bookbarter-front` (https://github.com/hryntar/BookBarter), образ збирається з `frontend/Dockerfile`.
+Після клонування: `git submodule update --init`.
+Кореневий `docker-compose.yml` — старий спосіб локального запуску без Kubernetes, для CI/CD не потрібен.
+
 ## 3. Одноразове налаштування
 
 1. **SonarQube пароль**: при першому вході admin/admin SonarQube вимагає новий пароль (мінімум 12 символів).
@@ -67,7 +74,13 @@ docker compose up -d --build
 | Deploy to Kubernetes | Secret з паролями, `kubectl apply` з конкретним тегом, `rollout status` | под не стартує за 10 хв → **автовідкат** (`rollout undo`) |
 | Smoke test | `/actuator/health` API Gateway, список сервісів в Eureka, захищений ендпоінт без JWT → 401/403 | Gateway не UP → **автовідкат** |
 
-Тригери: GitHub webhook (`http://<публічна-адреса>/github-webhook/`, напр. через ngrok) або опитування репозиторію кожні 2 хв (Poll SCM) — працює без публічної адреси.
+Тригери збірки:
+- **git-хук `ci/hooks/pre-push`** — одразу після `git push` у гілку з `GIT_BRANCH` дочікується, поки GitHub прийме коміт,
+  і викликає в локальному Jenkins «Poll now» (`POST /job/bookbarter/polling`). Збірка стартує за кілька секунд
+  з причиною «Started by an SCM change». Jenkins при цьому не відкривається в інтернет.
+  Увімкнути один раз у клоні репозиторію: `git config core.hooksPath ci/hooks`.
+- **Poll SCM кожні 2 хв** — резервний тригер (push з іншої машини, через веб-інтерфейс GitHub, або Jenkins був вимкнений).
+- GitHub webhook (`/github-webhook/`) теж підтримується job'ом, але потребує публічної адреси Jenkins (ngrok, smee.io тощо).
 
 Параметри збірки:
 - `DEPLOY=false` — лише CI (збірка, тести, Sonar, образи) без публікації й розгортання;
@@ -86,7 +99,7 @@ docker compose up -d --build
 ## 6. Корисні команди
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File k8s/port-forward.ps1   # Gateway :8000, Eureka :8761, Prometheus кластера :9091
+powershell -ExecutionPolicy Bypass -File k8s/port-forward.ps1   # Фронт :4173, Gateway :8000, Eureka :8761, Prometheus кластера :9091
 kubectl -n bookbarter get pods
 kubectl -n bookbarter rollout history deployment/book-service
 kubectl -n bookbarter rollout undo deployment/book-service   # ручний відкат
