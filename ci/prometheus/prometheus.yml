@@ -15,7 +15,7 @@ scrape_configs:
     static_configs:
       - targets: ['localhost:9090']
 
-  # Федерація з Prometheus, що працює в Kubernetes (k8s/prometheus.yaml, NodePort 30090)
+  # Федерація з Prometheus, що працює в Kubernetes (k8s/prometheus.yaml, NodePort 30090 на вузлі desktop-control-plane у docker-мережі kind)
   # і збирає метрики мікросервісів BookBarter (/actuator/prometheus).
   - job_name: k8s-federate
     honor_labels: true
@@ -24,6 +24,6 @@ scrape_configs:
       'match[]':
         - '{job=~".+"}'
     static_configs:
-      - targets: ['host.docker.internal:30090']
+      - targets: ['desktop-control-plane:30090']
         labels:
           component: app

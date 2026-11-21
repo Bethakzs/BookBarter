@@ -79,12 +79,14 @@ docker compose up -d --build
 ## 5. Моніторинг
 
 - Prometheus у Kubernetes (`k8s/prometheus.yaml`, NodePort 30090) збирає `/actuator/prometheus` з усіх сервісів.
+- Kubernetes Docker Desktop (kind) не публікує NodePort-и на localhost Windows — для браузера використовуй `k8s/port-forward.ps1`.
 - Prometheus у `ci/` збирає метрики Jenkins (`/prometheus/`) і федерує метрики сервісів з Kubernetes.
 - Grafana (папка *BookBarter*): дашборди **«Jenkins CI/CD»** (кількість, тривалість і успішність збірок) та **«BookBarter — мікросервіси»** (UP/DOWN, req/s, латентність, 5xx, JVM).
 
 ## 6. Корисні команди
 
 ```powershell
+powershell -ExecutionPolicy Bypass -File k8s/port-forward.ps1   # Gateway :8000, Eureka :8761, Prometheus кластера :9091
 kubectl -n bookbarter get pods
 kubectl -n bookbarter rollout history deployment/book-service
 kubectl -n bookbarter rollout undo deployment/book-service   # ручний відкат

@@ -11,6 +11,7 @@ services:
     build: ./jenkins
     image: bookbarter-jenkins:local
     container_name: jenkins
+    networks: [default, kind]
     # root потрібен, щоб Jenkins мав доступ до docker.sock Docker Desktop (лише для локального стенду)
     user: root
     env_file: .env
@@ -70,6 +71,7 @@ services:
   prometheus:
     image: prom/prometheus:v2.53.2
     container_name: ci-prometheus
+    networks: [default, kind]
     command:
       - --config.file=/etc/prometheus/prometheus.yml
       - --storage.tsdb.retention.time=15d
@@ -96,6 +98,12 @@ services:
       - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
       - grafana_data:/var/lib/grafana
     restart: unless-stopped
+
+networks:
+  default:
+  # Docker-мережа kind-кластера Kubernetes Docker Desktop (з'являється після Settings -> Kubernetes -> Enable)
+  kind:
+    external: true
 
 volumes:
   jenkins_home:

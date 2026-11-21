@@ -27,6 +27,11 @@ def deployedServices() {
     return params.FULL_STACK ? CORE_SERVICES + OPTIONAL_SERVICES : CORE_SERVICES
 }
 
+def expectedEurekaApps() {
+    return deployedServices().findAll { !(it.deployment in ['eureka', 'email-service']) }
+                             .collect { it.deployment.toUpperCase() }.join(' ')
+}
+
 def imageNames(services) {
     def names = services.collect { it.dir }
     if (fileExists('bookbarter-front/package.json')) { names << 'web' }
@@ -222,6 +227,10 @@ pipeline {
 
         stage('Smoke test') {
             when { expression { params.DEPLOY } }
+            environment {
+                // Spring-сервіси, які мають зареєструватися в Eureka (назва Deployment = spring.application.name)
+                EXPECTED_APPS = expectedEurekaApps()
+            }
             steps {
                 sh '''
                     echo "Перевірка API Gateway: $GATEWAY_URL/actuator/health"
@@ -233,9 +242,15 @@ pipeline {
                         sleep 10
                     done
 
-                    echo "Сервіси, зареєстровані в Eureka:"
-                    curl -fsS -H 'Accept: application/json' "$EUREKA_URL/eureka/apps" \
-                        | grep -o '"app":"[A-Z-]*"' | sort -u
+                    echo "Очікуємо реєстрації в Eureka: $EXPECTED_APPS"
+                    for i in $(seq 1 24); do
+                        apps=$(curl -fsS -H 'Accept: application/json' "$EUREKA_URL/eureka/apps" | grep -o '"app":"[A-Z-]*"' | cut -d'"' -f4 | sort -u)
+                        missing=""
+                        for a in $EXPECTED_APPS; do echo "$apps" | grep -qx "$a" || missing="$missing $a"; done
+                        if [ -z "$missing" ]; then echo "Усі сервіси зареєстровані в Eureka:"; echo "$apps"; break; fi
+                        [ "$i" = 24 ] && { echo "Не зареєструвались:$missing"; exit 1; }
+                        sleep 10
+                    done
 
                     echo "Захищений ендпоінт без JWT має повертати 401/403:"
                     code=$(curl -s -o /dev/null -w "%{http_code}" "$GATEWAY_URL/api/book/get-all")
