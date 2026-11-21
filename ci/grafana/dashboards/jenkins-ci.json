@@ -38,10 +38,10 @@
     },
     {
       "type": "stat",
-      "title": "Успішних збірок, %",
+      "title": "Стабільність збірок (health score), %",
       "gridPos": { "x": 12, "y": 0, "w": 6, "h": 5 },
       "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "targets": [{ "expr": "100 * sum(default_jenkins_builds_success_build_count{jenkins_job=\"bookbarter\"}) / sum(default_jenkins_builds_duration_milliseconds_summary_count{jenkins_job=\"bookbarter\"})", "refId": "A" }],
+      "targets": [{ "expr": "default_jenkins_builds_health_score{jenkins_job=\"bookbarter\"}", "refId": "A" }],
       "options": { "reduceOptions": { "calcs": ["lastNotNull"] } },
       "fieldConfig": { "defaults": { "unit": "percent", "decimals": 0, "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }, { "color": "yellow", "value": 60 }, { "color": "green", "value": 85 }] } }, "overrides": [] }
     },
@@ -64,21 +64,21 @@
     },
     {
       "type": "bargauge",
-      "title": "Середня тривалість етапів пайплайну",
+      "title": "Тривалість етапів останньої збірки",
       "gridPos": { "x": 12, "y": 5, "w": 12, "h": 8 },
       "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "targets": [{ "expr": "sum by (stage) (default_jenkins_builds_stage_duration_milliseconds_summary_sum{jenkins_job=\"bookbarter\"}) / sum by (stage) (default_jenkins_builds_stage_duration_milliseconds_summary_count{jenkins_job=\"bookbarter\"})", "legendFormat": "{{stage}}", "instant": true, "refId": "A" }],
+      "targets": [{ "expr": "sum by (stage) (default_jenkins_builds_last_stage_duration_milliseconds_summary_sum{jenkins_job=\"bookbarter\", stage!~\"Declarative.*\"})", "legendFormat": "{{stage}}", "instant": true, "refId": "A" }],
       "options": { "orientation": "horizontal", "displayMode": "gradient", "reduceOptions": { "calcs": ["lastNotNull"] } },
       "fieldConfig": { "defaults": { "unit": "ms" }, "overrides": [] }
     },
     {
       "type": "timeseries",
-      "title": "Збірки: успішні vs невдалі (накопичувально)",
+      "title": "Збірки: успішні vs невдалі (з моменту старту Jenkins)",
       "gridPos": { "x": 0, "y": 13, "w": 12, "h": 8 },
       "datasource": { "type": "prometheus", "uid": "prometheus" },
       "targets": [
-        { "expr": "sum(default_jenkins_builds_success_build_count{jenkins_job=\"bookbarter\"})", "legendFormat": "успішні", "refId": "A" },
-        { "expr": "sum(default_jenkins_builds_failed_build_count{jenkins_job=\"bookbarter\"})", "legendFormat": "невдалі", "refId": "B" }
+        { "expr": "sum(default_jenkins_builds_success_build_count_total{jenkins_job=\"bookbarter\"})", "legendFormat": "успішні", "refId": "A" },
+        { "expr": "sum(default_jenkins_builds_failed_build_count_total{jenkins_job=\"bookbarter\"})", "legendFormat": "невдалі", "refId": "B" }
       ],
       "fieldConfig": { "defaults": {}, "overrides": [
         { "matcher": { "id": "byName", "options": "успішні" }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "green" } }] },
@@ -87,12 +87,14 @@
     },
     {
       "type": "timeseries",
-      "title": "Jenkins executors і черга",
+      "title": "Тести останньої збірки та executors",
       "gridPos": { "x": 12, "y": 13, "w": 12, "h": 8 },
       "datasource": { "type": "prometheus", "uid": "prometheus" },
       "targets": [
         { "expr": "default_jenkins_executors_busy", "legendFormat": "зайняті executors", "refId": "A" },
-        { "expr": "default_jenkins_executors_queue_length", "legendFormat": "довжина черги", "refId": "B" }
+        { "expr": "default_jenkins_executors_queue_length", "legendFormat": "довжина черги", "refId": "B" },
+        { "expr": "default_jenkins_builds_last_build_tests_total{jenkins_job=\"bookbarter\"}", "legendFormat": "тестів у збірці", "refId": "C" },
+        { "expr": "default_jenkins_builds_last_build_tests_failing{jenkins_job=\"bookbarter\"}", "legendFormat": "тестів падає", "refId": "D" }
       ],
       "fieldConfig": { "defaults": {}, "overrides": [] }
     }
