@@ -4,7 +4,7 @@
 і (для перегляду в браузері) `powershell -ExecutionPolicy Bypass -File k8s\port-forward.ps1`.
 
 Jenkins: http://localhost:8080 → job **BookBarter CI/CD**. Після `git push` збірка стартує за кілька секунд
-(git-хук `ci/hooks/pre-push`, увімкнений через `git config core.hooksPath ci/hooks`; причина — «Started by an SCM change»).
+(git-хук `ci/hooks/pre-push`, увімкнений через `git config core.hooksPath ci/hooks`; на сторінці збірки — «with note: git push <коміт>»).
 Запустити вручну без push — **Build with Parameters → Build**.
 
 Для кожного сценарію зафіксуй: номер збірки, на якому етапі зупинилась, тривалість, скріни.

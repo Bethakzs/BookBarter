@@ -76,8 +76,8 @@ docker compose up -d --build
 
 Тригери збірки:
 - **git-хук `ci/hooks/pre-push`** — одразу після `git push` у гілку з `GIT_BRANCH` дочікується, поки GitHub прийме коміт,
-  і викликає в локальному Jenkins «Poll now» (`POST /job/bookbarter/polling`). Збірка стартує за кілька секунд
-  з причиною «Started by an SCM change». Jenkins при цьому не відкривається в інтернет.
+  і запускає job у локальному Jenkins (`buildWithParameters` з токеном із JCasC). Збірка стартує за ~10 с
+  з приміткою «Started by remote host ... with note: git push <коміт>». Jenkins при цьому не відкривається в інтернет.
   Увімкнути один раз у клоні репозиторію: `git config core.hooksPath ci/hooks`.
 - **Poll SCM кожні 2 хв** — резервний тригер (push з іншої машини, через веб-інтерфейс GitHub, або Jenkins був вимкнений).
 - GitHub webhook (`/github-webhook/`) теж підтримується job'ом, але потребує публічної адреси Jenkins (ngrok, smee.io тощо).

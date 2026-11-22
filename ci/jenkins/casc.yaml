@@ -56,6 +56,13 @@ jobs:
         displayName('BookBarter CI/CD')
         description('Build -> Unit tests + JaCoCo -> SonarQube Quality Gate -> Docker build -> Docker Hub -> Kubernetes -> Smoke test')
         logRotator { numToKeep(30) }
+        // токен для запуску з git-хука ci/hooks/pre-push (з приміткою "git push <коміт>")
+        authenticationToken('${JENKINS_TRIGGER_TOKEN:-bookbarter-git-push}')
+        parameters {
+          booleanParam('DEPLOY', true, 'Публікувати образи й розгортати в Kubernetes')
+          booleanParam('SONAR', true, 'Аналіз SonarQube + Quality Gate')
+          booleanParam('FULL_STACK', false, 'Розгорнути також notification, review та email (Go) сервіси')
+        }
         properties {
           pipelineTriggers {
             triggers {

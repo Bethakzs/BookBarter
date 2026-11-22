@@ -2,7 +2,8 @@
 # Миттєвий запуск збірки в локальному Jenkins після `git push` (замість очікування Poll SCM до 2 хв).
 #
 # У git немає post-push хука, тому pre-push запускає фоновий процес: він чекає, поки GitHub
-# прийме новий коміт, і тоді просить Jenkins (localhost) негайно перевірити репозиторій ("Poll now").
+# прийме новий коміт, і тоді запускає job через API Jenkins (localhost) з приміткою
+# "git push <коміт>" (видно на сторінці збірки: "Started by remote host ... with note: git push ...").
 # Нічого не відкривається в інтернет. Якщо Jenkins вимкнений — хук мовчки нічого не робить,
 # а Poll SCM підхопить зміни, коли Jenkins запуститься.
 #
@@ -16,6 +17,8 @@ env_value() { grep "^$1=" "$ENV_FILE" | head -1 | cut -d= -f2- | tr -d '\r'; }
 JUSER=$(env_value JENKINS_ADMIN_ID)
 JPASS=$(env_value JENKINS_ADMIN_PASSWORD)
 BRANCH=$(env_value GIT_BRANCH)
+TOKEN=$(env_value JENKINS_TRIGGER_TOKEN)
+TOKEN=${TOKEN:-bookbarter-git-push}
 JURL=${JENKINS_URL:-http://localhost:8080}
 JOB=${JENKINS_JOB:-bookbarter}
 REMOTE="$1"
@@ -24,6 +27,7 @@ while read -r local_ref local_sha remote_ref remote_sha; do
     # тільки push у гілку, за якою стежить Jenkins (не видалення гілки)
     [ "$remote_ref" = "refs/heads/${BRANCH:-main}" ] || continue
     case "$local_sha" in 0000000000000000000000000000000000000000) continue ;; esac
+    short=$(echo "$local_sha" | cut -c1-7)
 
     (
         i=0
@@ -32,10 +36,15 @@ while read -r local_ref local_sha remote_ref remote_sha; do
                 jar=$(mktemp)
                 crumb=$(curl -s -c "$jar" -u "$JUSER:$JPASS" "$JURL/crumbIssuer/api/json" \
                         | sed -n 's/.*"crumb":"\([^"]*\)".*/\1/p')
-                # "Poll now": Jenkins одразу перевіряє GitHub і запускає збірку, якщо є новий коміт
-                # (причина збірки — "Started by an SCM change", як і при звичайному Poll SCM)
-                curl -s -o /dev/null -b "$jar" -u "$JUSER:$JPASS" -H "Jenkins-Crumb: $crumb" \
-                     -X POST "$JURL/job/$JOB/polling"
+                query="token=$TOKEN&cause=git+push+$short"
+                code=$(curl -s -o /dev/null -w '%{http_code}' -b "$jar" -u "$JUSER:$JPASS" \
+                            -H "Jenkins-Crumb: $crumb" -X POST "$JURL/job/$JOB/buildWithParameters?$query")
+                case "$code" in
+                    2*) ;;
+                    # job ще без параметрів (наприклад, одразу після перезапуску Jenkins)
+                    *) curl -s -o /dev/null -b "$jar" -u "$JUSER:$JPASS" -H "Jenkins-Crumb: $crumb" \
+                            -X POST "$JURL/job/$JOB/build?$query" ;;
+                esac
                 rm -f "$jar"
                 exit 0
             fi
@@ -44,7 +53,7 @@ while read -r local_ref local_sha remote_ref remote_sha; do
         done
     ) </dev/null >/dev/null 2>&1 &
 
-    echo "[ci] Jenkins запустить збірку, щойно GitHub прийме push: $JURL/job/$JOB/"
+    echo "[ci] Jenkins запустить збірку $short, щойно GitHub прийме push: $JURL/job/$JOB/"
 done
 
 exit 0
