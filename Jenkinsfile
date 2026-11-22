@@ -202,8 +202,9 @@ pipeline {
                     '''
                 }
                 sh '''
-                    # Job із тестовими даними перевиконується при кожному деплої
+                    # Тестові дані тепер у data.sql сервісів; прибираємо старий Job/ConfigMap book-seed, якщо лишився
                     kubectl -n "$K8S_NAMESPACE" delete job book-seed --ignore-not-found
+                    kubectl -n "$K8S_NAMESPACE" delete configmap book-seed-sql --ignore-not-found
                     # Підставляємо в маніфест унікальний тег щойно зібраних образів (тому IfNotPresent достатньо)
                     sed -E -e "s#(image: [^ ]+/bookbarter-[a-z-]+):latest#\\1:${IMAGE_TAG}#" \
                            -e "s#imagePullPolicy: Always#imagePullPolicy: IfNotPresent#" \

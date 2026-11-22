@@ -36,8 +36,13 @@ spring:
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
-      ddl-auto: create-drop
+      ddl-auto: update
     show-sql: true
+    # data.sql (тестові дані) виконується після створення схеми Hibernate
+    defer-datasource-initialization: true
+  sql:
+    init:
+      mode: always
   main:
     allow-circular-references: true
   servlet:

@@ -144,20 +144,6 @@ services:
       JWT_SECRET: sheeesh
       JWT_ACCESS_TOKEN_LIFETIME: 1h
       JWT_REFRESH_TOKEN_LIFETIME: 1d
-  book-seed:
-    image: postgres:16
-    depends_on:
-      book-db:
-        condition: service_healthy
-      book-service:
-        condition: service_started
-    environment:
-      PGPASSWORD: 12345
-    volumes:
-      - ./book_data_insert.sql:/seed/book_data_insert.sql:ro
-    entrypoint: /bin/bash
-    command: -c "until pg_isready -h book-db -p 5432 -U postgres -d book; do echo waiting for db; sleep 2; done; until psql -h book-db -U postgres -d book -tAc \"SELECT 1 FROM information_schema.tables WHERE table_schema='public' AND table_name='books'\" | grep -q 1; do echo waiting for schema; sleep 2; done; psql -h book-db -U postgres -d book -f /seed/book_data_insert.sql"
-    restart: "no"
   purchase-db:
     image: postgres
     environment:
