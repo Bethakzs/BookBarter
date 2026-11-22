@@ -62,6 +62,7 @@ jobs:
           booleanParam('DEPLOY', true, 'Публікувати образи й розгортати в Kubernetes')
           booleanParam('SONAR', true, 'Аналіз SonarQube + Quality Gate')
           booleanParam('FULL_STACK', false, 'Розгорнути також notification, review та email (Go) сервіси')
+          booleanParam('FORCE_ALL', false, 'Перезібрати й передеплоїти всі сервіси, навіть без змін у коді')
         }
         properties {
           pipelineTriggers {

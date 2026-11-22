@@ -42,10 +42,30 @@ def rolloutTargets() {
     return deployedServices() + (hasFrontend() ? [[dir: 'bookbarter-front', deployment: 'web']] : [])
 }
 
-def imageNames(services) {
-    def names = services.collect { it.dir }
-    if (hasFrontend()) { names << 'web' }
-    return names
+// Інкрементальний деплой: тег образу = хеш вихідного коду сервісу в git (src-<hash>).
+// Якщо код сервісу не змінювався, тег той самий -> образ не збирається, не публікується,
+// а под у Kubernetes не перезапускається. Заповнюється на етапі "Detect changes".
+IMAGE_TAGS = [:]        // deployment -> тег образу, який має бути розгорнутий
+CHANGED_TARGETS = []    // сервіси, які треба зібрати й розгорнути в цій збірці
+
+// Назва образу: bookbarter-<imageName>
+def imageName(s) {
+    return s.deployment == 'web' ? 'web' : s.dir
+}
+
+def sourceTag(s) {
+    if (s.deployment == 'web') {
+        // фронт = коміт submodule + власний frontend/Dockerfile
+        def front = sh(returnStdout: true, script: 'git rev-parse HEAD:bookbarter-front').trim()
+        def dockerfile = sh(returnStdout: true, script: 'git rev-parse HEAD:frontend').trim()
+        return "src-${front.take(7)}${dockerfile.take(5)}"
+    }
+    return 'src-' + sh(returnStdout: true, script: "git rev-parse HEAD:${s.dir}").trim().take(12)
+}
+
+def deployedImage(s) {
+    return sh(returnStdout: true,
+              script: "kubectl -n ${env.K8S_NAMESPACE} get deployment ${s.deployment} -o jsonpath='{.spec.template.spec.containers[0].image}' 2>/dev/null || true").trim()
 }
 
 def rollback(services, namespace) {
@@ -68,6 +88,7 @@ pipeline {
         booleanParam(name: 'DEPLOY', defaultValue: true, description: 'Публікувати образи й розгортати в Kubernetes')
         booleanParam(name: 'SONAR', defaultValue: true, description: 'Аналіз SonarQube + Quality Gate')
         booleanParam(name: 'FULL_STACK', defaultValue: false, description: 'Розгорнути також notification, review та email (Go) сервіси')
+        booleanParam(name: 'FORCE_ALL', defaultValue: false, description: 'Перезібрати й передеплоїти всі сервіси, навіть без змін у коді')
     }
 
     environment {
@@ -97,6 +118,39 @@ pipeline {
                     currentBuild.description = "tag ${env.IMAGE_TAG}"
                 }
                 echo "Збірка ${env.IMAGE_TAG}"
+            }
+        }
+
+        stage('Detect changes') {
+            steps {
+                script {
+                    if (params.DEPLOY) {
+                        sh '''
+                            # Jenkins і CI-Prometheus мають бачити кластер (API + NodePort-и) у docker-мережі kind
+                            docker network connect "$K8S_NETWORK" jenkins 2>/dev/null || true
+                            docker network connect "$K8S_NETWORK" ci-prometheus 2>/dev/null || true
+                            # kubeconfig Docker Desktop вказує на 127.0.0.1 хоста — підміняємо адресу API для контейнера
+                            kubectl --kubeconfig=/root/.kube/config config view --raw --minify --context=docker-desktop > "$KUBECONFIG"
+                            kubectl config set-cluster "$(kubectl config view -o jsonpath='{.clusters[0].name}')" --server="$K8S_API_SERVER" >/dev/null
+                        '''
+                    }
+                    def plan = []
+                    CHANGED_TARGETS = []
+                    rolloutTargets().each { s ->
+                        def tag = sourceTag(s)
+                        def image = "${env.IMAGE_PREFIX}-${imageName(s)}:${tag}"
+                        def current = params.DEPLOY ? deployedImage(s) : ''
+                        // без DEPLOY кластер не перевіряємо — збираємо все (перевірка Dockerfile-ів)
+                        def build = params.FORCE_ALL || !params.DEPLOY || current != image
+                        IMAGE_TAGS[s.deployment] = tag
+                        if (build) { CHANGED_TARGETS << s }
+                        def was = (build && current) ? "  (було: ${current.tokenize(':').last()})" : ''
+                        plan << "${build ? 'BUILD' : 'skip '}  ${s.deployment} -> ${tag}${was}"
+                    }
+                    echo "План (тег = хеш коду сервісу в git):\n" + plan.join('\n')
+                    def names = CHANGED_TARGETS.collect { it.deployment }
+                    currentBuild.description = "${env.IMAGE_TAG}: " + (names ? names.join(', ') : 'без змін у сервісах')
+                }
             }
         }
 
@@ -139,11 +193,15 @@ pipeline {
         stage('Docker build') {
             steps {
                 script {
-                    deployedServices().each { s ->
-                        sh "docker build -t ${IMAGE_PREFIX}-${s.dir}:${IMAGE_TAG} -t ${IMAGE_PREFIX}-${s.dir}:latest ${s.dir}"
-                    }
-                    if (hasFrontend()) {
-                        sh "docker build -f frontend/Dockerfile -t ${IMAGE_PREFIX}-web:${IMAGE_TAG} -t ${IMAGE_PREFIX}-web:latest bookbarter-front"
+                    if (!CHANGED_TARGETS) { echo 'Код сервісів не змінювався — образи не збираються' }
+                    CHANGED_TARGETS.each { s ->
+                        def image = "${IMAGE_PREFIX}-${imageName(s)}"
+                        def tag = IMAGE_TAGS[s.deployment]
+                        if (s.deployment == 'web') {
+                            sh "docker build -f frontend/Dockerfile -t ${image}:${tag} -t ${image}:latest bookbarter-front"
+                        } else {
+                            sh "docker build -t ${image}:${tag} -t ${image}:latest ${s.dir}"
+                        }
                     }
                 }
             }
@@ -153,6 +211,7 @@ pipeline {
             when { expression { params.DEPLOY } }
             steps {
                 script {
+                    if (!CHANGED_TARGETS) { echo 'Нових образів немає — публікувати нічого'; return }
                     def hasToken = false
                     withCredentials([usernamePassword(credentialsId: 'dockerhub', usernameVariable: 'DH_USER', passwordVariable: 'DH_TOKEN')]) {
                         hasToken = sh(returnStatus: true, script: '[ -n "$DH_TOKEN" ]') == 0
@@ -161,17 +220,17 @@ pipeline {
                         }
                     }
                     if (hasToken) {
-                        echo 'Публікація образів у Docker Hub'
-                        imageNames(deployedServices()).each { name ->
-                            sh "docker push ${IMAGE_PREFIX}-${name}:${IMAGE_TAG}"
-                            sh "docker push ${IMAGE_PREFIX}-${name}:latest"
+                        echo 'Публікація змінених образів у Docker Hub'
+                        CHANGED_TARGETS.each { s ->
+                            sh "docker push ${IMAGE_PREFIX}-${imageName(s)}:${IMAGE_TAGS[s.deployment]}"
+                            sh "docker push ${IMAGE_PREFIX}-${imageName(s)}:latest"
                         }
                     } else {
                         // Резервний режим для локального стенду: токен Docker Hub не задано (ci/.env -> DOCKERHUB_TOKEN),
                         // тому образи імпортуються напряму в containerd вузла Kubernetes (аналог "kind load docker-image")
                         echo 'DOCKERHUB_TOKEN не задано — образи завантажуються напряму у вузол Kubernetes'
-                        imageNames(deployedServices()).each { name ->
-                            sh "docker save ${IMAGE_PREFIX}-${name}:${IMAGE_TAG} | docker exec -i ${K8S_NODE} ctr -n k8s.io images import -"
+                        CHANGED_TARGETS.each { s ->
+                            sh "docker save ${IMAGE_PREFIX}-${imageName(s)}:${IMAGE_TAGS[s.deployment]} | docker exec -i ${K8S_NODE} ctr -n k8s.io images import -"
                         }
                     }
                 }
@@ -181,16 +240,15 @@ pipeline {
         stage('Deploy to Kubernetes') {
             when { expression { params.DEPLOY } }
             steps {
-                sh '''
-                    # Jenkins і CI-Prometheus мають бачити кластер (API + NodePort-и) у docker-мережі kind
-                    docker network connect "$K8S_NETWORK" jenkins 2>/dev/null || true
-                    docker network connect "$K8S_NETWORK" ci-prometheus 2>/dev/null || true
-
-                    # kubeconfig Docker Desktop вказує на 127.0.0.1 хоста — підміняємо адресу API для контейнера
-                    kubectl --kubeconfig=/root/.kube/config config view --raw --minify --context=docker-desktop > "$KUBECONFIG"
-                    kubectl config set-cluster "$(kubectl config view -o jsonpath='{.clusters[0].name}')" --server="$K8S_API_SERVER" >/dev/null
-                    kubectl get nodes
-                '''
+                sh 'kubectl get nodes'
+                script {
+                    // sed-правила: кожен сервіс отримує свій тег (новий — для змінених, поточний — для решти)
+                    def rules = rolloutTargets().collect { s ->
+                        "s#(image: [^ ]+/bookbarter-${imageName(s)}):latest#\\1:${IMAGE_TAGS[s.deployment]}#"
+                    }
+                    rules << 's#imagePullPolicy: Always#imagePullPolicy: IfNotPresent#'
+                    writeFile file: '.image-tags.sed', text: rules.join('\n') + '\n'
+                }
                 withCredentials([string(credentialsId: 'bookbarter-db-password', variable: 'DB_PASSWORD'),
                                  string(credentialsId: 'bookbarter-jwt-secret', variable: 'JWT_SECRET')]) {
                     sh '''
@@ -205,23 +263,18 @@ pipeline {
                     # Тестові дані тепер у data.sql сервісів; прибираємо старий Job/ConfigMap book-seed, якщо лишився
                     kubectl -n "$K8S_NAMESPACE" delete job book-seed --ignore-not-found
                     kubectl -n "$K8S_NAMESPACE" delete configmap book-seed-sql --ignore-not-found
-                    # Підставляємо в маніфест унікальний тег щойно зібраних образів (тому IfNotPresent достатньо)
-                    sed -E -e "s#(image: [^ ]+/bookbarter-[a-z-]+):latest#\\1:${IMAGE_TAG}#" \
-                           -e "s#imagePullPolicy: Always#imagePullPolicy: IfNotPresent#" \
-                           k8s/bookbarter.yaml | kubectl apply -f -
+                    # Підставляємо в маніфести теги образів (src-<хеш коду>); у незмінених сервісів тег той самий,
+                    # тому kubectl apply їх не чіпає і поди не перезапускаються
+                    sed -E -f .image-tags.sed k8s/bookbarter.yaml | kubectl apply -f -
                     kubectl apply -f k8s/prometheus.yaml
                     if [ "$FULL_STACK" = "true" ]; then
-                        sed -E -e "s#(image: [^ ]+/bookbarter-[a-z-]+):latest#\\1:${IMAGE_TAG}#" \
-                               -e "s#imagePullPolicy: Always#imagePullPolicy: IfNotPresent#" \
-                               k8s/optional-services.yaml | kubectl apply -f -
+                        sed -E -f .image-tags.sed k8s/optional-services.yaml | kubectl apply -f -
                     else
                         # Мінімальний профіль: додаткові сервіси прибираються, щоб звільнити пам'ять
                         kubectl delete -f k8s/optional-services.yaml --ignore-not-found
                     fi
                     if [ -f bookbarter-front/package.json ]; then
-                        sed -E -e "s#(image: [^ ]+/bookbarter-web):latest#\\1:${IMAGE_TAG}#" \
-                               -e "s#imagePullPolicy: Always#imagePullPolicy: IfNotPresent#" \
-                               k8s/frontend.yaml | kubectl apply -f -
+                        sed -E -f .image-tags.sed k8s/frontend.yaml | kubectl apply -f -
                     fi
                 '''
                 script {
@@ -232,9 +285,9 @@ pipeline {
             }
             post {
                 failure {
-                    echo 'Розгортання не вдалося — відкат до попередньої версії'
+                    echo 'Розгортання не вдалося — відкат змінених сервісів до попередньої версії'
                     sh 'kubectl -n "$K8S_NAMESPACE" get pods -o wide || true'
-                    script { rollback(rolloutTargets(), env.K8S_NAMESPACE) }
+                    script { rollback(CHANGED_TARGETS, env.K8S_NAMESPACE) }
                 }
             }
         }
@@ -279,8 +332,8 @@ pipeline {
             }
             post {
                 failure {
-                    echo 'Smoke test не пройдено — відкат до попередньої версії'
-                    script { rollback(rolloutTargets(), env.K8S_NAMESPACE) }
+                    echo 'Smoke test не пройдено — відкат змінених сервісів до попередньої версії'
+                    script { rollback(CHANGED_TARGETS, env.K8S_NAMESPACE) }
                 }
             }
         }

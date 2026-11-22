@@ -19,6 +19,15 @@ management:
   tracing:
     sampling:
       probability: 1.0
+  info:
+    env:
+      enabled: true
+
+# Показується на http://localhost:8000/actuator/info — зручно перевіряти, що нова версія задеплоїлась
+info:
+  app:
+    name: BookBarter API Gateway
+    version: 1.0.0
 
 jwt:
   secret: sheeesh

@@ -88,6 +88,23 @@ docker compose up -d --build
 - `FULL_STACK=true` — розгорнути також додаткові сервіси з `k8s/optional-services.yaml` (notification, review, email на Go).
   За замовчуванням розгортається **мінімальний профіль** — eureka, api-gateway, auth, user, book, purchase + Kafka і PostgreSQL —
   щоб стенд вміщався в пам'ять ноутбука. Тести й аналіз SonarQube виконуються для всіх модулів незалежно від профілю.
+- `FORCE_ALL=true` — перезібрати й передеплоїти всі сервіси, навіть без змін у коді.
+
+**Інкрементальний деплой.** Тег образу — хеш вихідного коду сервісу в git (`src-<hash>` = `git rev-parse HEAD:<папка сервісу>`;
+для фронту — коміт submodule + `frontend/Dockerfile`). Етап **Detect changes** порівнює його з образом, що зараз працює
+в Kubernetes, і друкує план `BUILD`/`skip`. Збираються, публікуються в Docker Hub і перезапускаються лише змінені сервіси;
+решта зберігає свій образ, і `kubectl apply` їх не чіпає. Якщо деплой або smoke test падає — відкочуються тільки змінені.
+Тести й SonarQube все одно проходять для всього коду.
+
+### Як швидко перевірити зміну бекенду
+1. **Версія Gateway.** У `api-gateway-service/src/main/resources/application.yml` зміни `info.app.version` (напр. `1.0.1`),
+   commit + push. План збірки покаже `BUILD api-gateway`, решта — `skip`. Результат: http://localhost:8000/actuator/info.
+2. **Який образ працює:** `kubectl -n bookbarter get deploy -o wide` (колонка IMAGES — тег змінився лише в зміненого сервісу),
+   `kubectl -n bookbarter rollout history deployment/api-gateway`.
+3. **Зміна логіки + API.** Напр., у `auth-service/.../service/UserService.java` новому користувачу `.bucks(5L)` → `.bucks(10L)`,
+   push, потім зареєструватися на фронті (http://localhost:4173) і перевірити баланс у профілі.
+4. **Логи нового пода:** `kubectl -n bookbarter logs deploy/book-service --tail=50` (або `-f` в реальному часі).
+5. **Зламана зміна:** зламай тест сервісу — збірка зупиниться на тестах, у кластері лишиться попередня версія.
 
 ## 5. Моніторинг
 
