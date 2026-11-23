@@ -27,7 +27,7 @@ management:
 info:
   app:
     name: BookBarter API Gateway
-    version: 1.0.0
+    version: 1.0.1
 
 jwt:
   secret: sheeesh
