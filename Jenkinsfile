@@ -74,6 +74,20 @@ def rollback(services, namespace) {
     }
 }
 
+// Мережеві кроки (Docker Hub) повторюються до 3 разів з паузою 20 с,
+// щоб короткий збій мережі/DNS не валив усю збірку
+def withNetworkRetry(String what, Closure body) {
+    def attempt = 0
+    retry(3) {
+        attempt++
+        if (attempt > 1) {
+            echo "Повторна спроба ${attempt}/3: ${what}"
+            sleep(time: 20, unit: 'SECONDS')
+        }
+        body()
+    }
+}
+
 pipeline {
     agent any
 
@@ -197,10 +211,12 @@ pipeline {
                     CHANGED_TARGETS.each { s ->
                         def image = "${IMAGE_PREFIX}-${imageName(s)}"
                         def tag = IMAGE_TAGS[s.deployment]
-                        if (s.deployment == 'web') {
-                            sh "docker build -f frontend/Dockerfile -t ${image}:${tag} -t ${image}:latest bookbarter-front"
-                        } else {
-                            sh "docker build -t ${image}:${tag} -t ${image}:latest ${s.dir}"
+                        withNetworkRetry("docker build ${s.deployment}") {
+                            if (s.deployment == 'web') {
+                                sh "docker build -f frontend/Dockerfile -t ${image}:${tag} -t ${image}:latest bookbarter-front"
+                            } else {
+                                sh "docker build -t ${image}:${tag} -t ${image}:latest ${s.dir}"
+                            }
                         }
                     }
                 }
@@ -222,8 +238,10 @@ pipeline {
                     if (hasToken) {
                         echo 'Публікація змінених образів у Docker Hub'
                         CHANGED_TARGETS.each { s ->
-                            sh "docker push ${IMAGE_PREFIX}-${imageName(s)}:${IMAGE_TAGS[s.deployment]}"
-                            sh "docker push ${IMAGE_PREFIX}-${imageName(s)}:latest"
+                            withNetworkRetry("docker push ${s.deployment}") {
+                                sh "docker push ${IMAGE_PREFIX}-${imageName(s)}:${IMAGE_TAGS[s.deployment]}"
+                                sh "docker push ${IMAGE_PREFIX}-${imageName(s)}:latest"
+                            }
                         }
                     } else {
                         // Резервний режим для локального стенду: токен Docker Hub не задано (ci/.env -> DOCKERHUB_TOKEN),
