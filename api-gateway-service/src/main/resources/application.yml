@@ -23,11 +23,10 @@ management:
     env:
       enabled: true
 
-# Показується на http://localhost:8000/actuator/info — зручно перевіряти, що нова версія задеплоїлась
 info:
   app:
     name: BookBarter API Gateway
-    version: 1.0.1
+    version: 1.0.2
 
 jwt:
   secret: sheeesh
